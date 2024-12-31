@@ -105,12 +105,12 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\gstreamer\1.0\msvc_x86_64\include\gstreamer-1.0;D:\gstreamer\1.0\msvc_x86_64\include\glib-2.0;D:\gstreamer\1.0\msvc_x86_64\lib\glib-2.0\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(GSTREAMER_1_0_ROOT_X86_64)\include\gstreamer-1.0;$(GSTREAMER_1_0_ROOT_X86_64)\include\glib-2.0;$(GSTREAMER_1_0_ROOT_X86_64)\lib\glib-2.0\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>D:\gstreamer\1.0\msvc_x86_64\lib\gstreamer-1.0.lib;D:\gstreamer\1.0\msvc_x86_64\lib\glib-2.0.lib;D:\gstreamer\1.0\msvc_x86_64\lib\gstrtspserver-1.0.lib;D:\gstreamer\1.0\msvc_x86_64\lib\gobject-2.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(GSTREAMER_1_0_ROOT_X86_64)\lib\gstreamer-1.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\glib-2.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\gstrtspserver-1.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\gobject-2.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -122,18 +122,21 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\gstreamer\1.0\msvc_x86_64\include\gstreamer-1.0;D:\gstreamer\1.0\msvc_x86_64\include\glib-2.0;D:\gstreamer\1.0\msvc_x86_64\lib\glib-2.0\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(GSTREAMER_1_0_ROOT_X86_64)\include\gstreamer-1.0;$(GSTREAMER_1_0_ROOT_X86_64)\include\glib-2.0;$(GSTREAMER_1_0_ROOT_X86_64)\lib\glib-2.0\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>D:\gstreamer\1.0\msvc_x86_64\lib\gstreamer-1.0.lib;D:\gstreamer\1.0\msvc_x86_64\lib\glib-2.0.lib;D:\gstreamer\1.0\msvc_x86_64\lib\gstrtspserver-1.0.lib;D:\gstreamer\1.0\msvc_x86_64\lib\gobject-2.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(GSTREAMER_1_0_ROOT_X86_64)\lib\gstreamer-1.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\glib-2.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\gstrtspserver-1.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\gobject-2.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="RTSPServer.cpp" />
+    <ClCompile Include="RTSPServer.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(GSTREAMER_1_0_ROOT_X86_64)\include\gstreamer-1.0;$(GSTREAMER_1_0_ROOT_X86_64)\include\glib-2.0;$(GSTREAMER_1_0_ROOT_X86_64)\lib\glib-2.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="old_source.txt" />
