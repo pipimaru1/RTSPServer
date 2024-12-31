@@ -1,4 +1,4 @@
-﻿p// RTSPServer.cpp : このファイルには 'main' 関数が含まれています。プログラム実行の開始と終了がそこで行われます。
+﻿// RTSPServer.cpp : このファイルには 'main' 関数が含まれています。プログラム実行の開始と終了がそこで行われます。
 //
 
 ///////////////////////////////////////////////////////////////////
@@ -48,13 +48,20 @@
 //ffplay rtsp://127.0.0.1:8554/test
 //ffplay rtsp://127.0.0.1:8555/sisi
 
-
+#define _WIN32_WINNT 0x0600  // inet_ntop を利用するために必要な場合がある(Windows Vista以降)
 #include <thread>
+#include <string>
 #include <sstream>
 #include <iostream>
 #include <conio.h>  // getch() / _getch()
+#include <winsock2.h>
+#include <Ws2tcpip.h>
+#include <vector>
+
 #include <gst/gst.h>
 #include <gst/rtsp-server/rtsp-server.h>
+
+#pragma comment(lib, "ws2_32.lib")
 
 //#define DEFAULT_RTSP_PORT "8554"
 #define DEFAULT_DISABLE_RTCP FALSE
@@ -62,59 +69,68 @@
 //static char* port = (char*)DEFAULT_RTSP_PORT;           
 static gboolean disable_rtcp = DEFAULT_DISABLE_RTCP;    
 
-//static char* channel = (char*)"/test";
-
-//static GOptionEntry entries[] = {
-//  {"port", 'p', 0, G_OPTION_ARG_STRING, &port,
-//      "Port to listen on (default: " DEFAULT_RTSP_PORT ")", "PORT"},
-//  {"disable-rtcp", '\0', 0, G_OPTION_ARG_NONE, &disable_rtcp,
-//      "Whether RTCP should be disabled (default false)", NULL},
-//  {NULL}
-//};
-
-/*
-///////////////////////////////////////////////////////////////////
-//GStreamer パイプラインでエラーが発生した場合、バスのメッセージを監視して対応します。
-static void on_client_connected(GstRTSPServer* server, GstRTSPClient* client, gpointer user_data) 
+//////////////////////////////////////////////////////////
+// 実行中のシステムのIPアドレス(IPv4/IPv6)を取得して返す関数
+std::vector<std::string> getLocalIPAddresses()
 {
-    g_print("Client connected!\n");
+    // 戻り値用のベクタ
+    std::vector<std::string> addresses;
 
-    // エラーハンドリングを実装
-    if (!server || !client) {
-        g_printerr("Error: Invalid server or client object.\n");
-        return;
+    // Winsockの初期化
+    WSADATA wsaData;
+    int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (result != 0) {
+        std::cerr << "WSAStartup failed: " << result << std::endl;
+        return addresses;  // 空のベクタを返す
     }
+
+    // ホスト名(コンピュータ名)を取得
+    char hostname[NI_MAXHOST];
+    if (gethostname(hostname, NI_MAXHOST) == SOCKET_ERROR) {
+        std::cerr << "gethostname failed. Error: " << WSAGetLastError() << std::endl;
+        WSACleanup();
+        return addresses;  // 空のベクタを返す
+    }
+
+    // アドレス情報を取得 (IPv4, IPv6問わず取得)
+    struct addrinfo hints = { 0 };
+    hints.ai_family = AF_UNSPEC;    // IPv4 / IPv6 両方取得
+    hints.ai_socktype = SOCK_STREAM;  // TCP(SOCK_STREAM)を指定(UDPならSOCK_DGRAMなど)
+    hints.ai_flags = AI_PASSIVE;   // 「任意」フラグ(自マシンに割り当てられたIPの情報を取得)
+
+    struct addrinfo* res = nullptr;
+    result = getaddrinfo(hostname, nullptr, &hints, &res);
+    if (result != 0) {
+        std::cerr << "getaddrinfo failed. Error: " << result << std::endl;
+        WSACleanup();
+        return addresses;  // 空のベクタを返す
+    }
+
+    // 取得したアドレスリストを走査して文字列に変換し、ベクタに格納
+    for (auto ptr = res; ptr != nullptr; ptr = ptr->ai_next) {
+        char ipStr[INET6_ADDRSTRLEN] = { 0 };
+
+        if (ptr->ai_family == AF_INET) {
+            // IPv4
+            sockaddr_in* ipv4 = reinterpret_cast<sockaddr_in*>(ptr->ai_addr);
+            inet_ntop(AF_INET, &(ipv4->sin_addr), ipStr, sizeof(ipStr));
+            addresses.push_back(ipStr);
+        }
+        else if (ptr->ai_family == AF_INET6) {
+            // IPv6
+            sockaddr_in6* ipv6 = reinterpret_cast<sockaddr_in6*>(ptr->ai_addr);
+            inet_ntop(AF_INET6, &(ipv6->sin6_addr), ipStr, sizeof(ipStr));
+            addresses.push_back(ipStr);
+        }
+    }
+
+    // 後片付け
+    freeaddrinfo(res);
+    WSACleanup();
+
+    // 取得したIPアドレス一覧を返す
+    return addresses;
 }
-
-///////////////////////////////////////////////////////////////////
-//GStreamer パイプラインでエラーが発生した場合、バスのメッセージを監視して対応します。
-static gboolean bus_watch(GstBus* bus, GstMessage* msg, gpointer data) 
-{
-    GMainLoop* loop = (GMainLoop*)data;
-
-    switch (GST_MESSAGE_TYPE(msg)) {
-    case GST_MESSAGE_ERROR: {
-        GError* err;
-        gchar* debug;
-        gst_message_parse_error(msg, &err, &debug);
-        g_printerr("Error: %s\n", err->message);
-        g_error_free(err);
-        g_free(debug);
-
-        g_main_loop_quit(loop); // エラー発生時にループを終了
-        break;
-    }
-    case GST_MESSAGE_EOS:
-        g_print("End of stream\n");
-        g_main_loop_quit(loop);
-        break;
-    default:
-        break;
-    }
-
-    return TRUE;
-}
-*/
 
 //////////////////////////////////////////////////////////
 //異常があった時のコールバック関数
@@ -236,7 +252,24 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
     gst_rtsp_server_attach(server, NULL);
 
     /* start serving */
+    //std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
+
+    // IPアドレス一覧を取得
+    std::vector<std::string> ipList = getLocalIPAddresses();
     std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
+
+    // 結果の表示
+    if (ipList.empty()) {
+        std::cout << "Can not find other ip address." << std::endl;
+        //std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
+    }
+    else {
+        //std::cout << "取得したIPアドレス一覧:" << std::endl;
+        for (const auto& ip : ipList) {
+            std::cout << "Stream Ready at rtsp://"<<ip<<":" << str_outport << sstr_channel.str() << std::endl;
+        }
+    }
+
 
     g_main_loop_run(loop);
 
@@ -311,118 +344,5 @@ int main(int argc, char* argv[])
     mainLoopThread.join();
     g_main_loop_unref(_loop);
 
-    return 0;
-}
-
-
-int main_old(int argc, char* argv[])
-{
-    std::ostringstream str_pipeline;
-    std::ostringstream str_outport;
-    std::ostringstream str_channel;
-
-    //std::string str_pipeline("( udpsrc port=5004 caps=\"application/x-rtp,media=video,encoding-name=H264,payload=96\" ! rtph264depay ! h264parse ! rtph264pay name=pay0 pt=96 )");
-
-    if (argc == 1)
-    {
-        std::cout << argv[0] << " : use default parametors" << std::endl
-            << "[in_port]  : 5004" << std::endl
-            << "[out_port] : 8554" << std::endl
-            << "[ch_name]  : default" << std::endl;
-
-        str_pipeline << "( udpsrc port=5004 caps=\"application/x-rtp,media=video,encoding-name=H264,payload=96\" ! rtph264depay ! h264parse ! rtph264pay name=pay0 pt=96 )";
-        str_channel << "/test";
-        str_outport << "8554";
-    }
-    //else if (argc == 4)
-    //{
-    //    str_pipeline << "( udpsrc port="<< argv[1]<< " caps=\"application/x-rtp,media=video,encoding-name=H264,payload=96\" ! rtph264depay ! h264parse ! rtph264pay name=pay0 pt=96 )";
-    //    str_outport << argv[2];
-    //    str_channel << "/" << argv[3];
-    //}
-    //else
-    //{
-    //    std::cout << "Usage : " << argv[0] << " [in_port] [out_port] [ch_name]" << std::endl
-    //        << "Example : " << argv[0] << " 5004 8554 ch01" << std::endl;
-    //    return -1;
-    //}
-
-
-    GMainLoop* loop;
-    GstRTSPServer* server;
-    GstRTSPMountPoints* mounts;
-    GstRTSPMediaFactory* factory;
-    GOptionContext* optctx;
-    GError* error = NULL;
-
-    std::ostringstream str_GOptionEntry_01;
-    str_GOptionEntry_01 << "Port to listen on (default: " << str_outport.str().c_str() << ")";
-    size_t buffer_size = str_outport.str().size() + 1;
-
-    //ここの処理は引数解析のところに入れたらいいかな
-    char* tmp_port;
-    tmp_port = new char[buffer_size];
-    strcpy_s(tmp_port, buffer_size, str_outport.str().c_str());
-
-    static GOptionEntry entries[] = {
-        {"port",         'p',  0, G_OPTION_ARG_STRING, &(tmp_port),  str_GOptionEntry_01.str().c_str(),               "PORT"},
-        {"disable-rtcp", '\0', 0, G_OPTION_ARG_NONE,   &disable_rtcp,"Whether RTCP should be disabled (default false)", NULL},
-        {NULL}
-    };
-
-    optctx = g_option_context_new("<launch line> - Test RTSP Server, Launch\n\n"
-        "Example: \"( videotestsrc ! x264enc ! rtph264pay name=pay0 pt=96 )\"");
-    g_option_context_add_main_entries(optctx, entries, NULL);
-    g_option_context_add_group(optctx, gst_init_get_option_group());
-
-    //ここはgstreamerの引数解析関数 gstreamerには標準の引数解析がある。
-    if (!g_option_context_parse(optctx, &argc, &argv, &error)) {
-        g_printerr("Error parsing options: %s\n", error->message);
-        g_option_context_free(optctx);
-        g_clear_error(&error);
-        return -1;
-    }
-    g_option_context_free(optctx);
-
-    loop = g_main_loop_new(NULL, FALSE);
-
-    /* create a server instance */
-    server = gst_rtsp_server_new();
-
-    //g_object_set(server, "service", port, NULL);
-    g_object_set(server, "service", str_outport.str().c_str(), NULL);
-
-    /* get the mount points for this server, every server has a default object
-     * that be used to map uri mount points to media factories */
-    mounts = gst_rtsp_server_get_mount_points(server);
-
-    /* make a media factory for a test stream. The default media factory can use
-     * gst-launch syntax to create pipelines.
-     * any launch line works as long as it contains elements named pay%d. Each
-     * element with pay%d names will be a stream */
-    factory = gst_rtsp_media_factory_new();
-    //gst_rtsp_media_factory_set_launch(factory, argv[1]);
-    gst_rtsp_media_factory_set_launch(factory, str_pipeline.str().c_str());
-
-    gst_rtsp_media_factory_set_shared(factory, TRUE);
-    gst_rtsp_media_factory_set_enable_rtcp(factory, !disable_rtcp);
-
-    /* attach the test factory to the /test url */
-    //gst_rtsp_mount_points_add_factory(mounts, "/test", factory);
-    gst_rtsp_mount_points_add_factory(mounts, str_channel.str().c_str(), factory);
-
-    /* don't need the ref to the mapper anymore */
-    g_object_unref(mounts);
-
-    /* attach the server to the default maincontext */
-    gst_rtsp_server_attach(server, NULL);
-
-    /* start serving */
-    //g_print("stream ready at rtsp://127.0.0.1:%s/test\n", port);
-    std::cout << "tream ready at rtsp://127.0.0.1:" << str_outport.str() << str_channel.str() << std::endl;
-
-    g_main_loop_run(loop);
-
-    delete tmp_port;
     return 0;
 }
