@@ -57,6 +57,8 @@
 #include <winsock2.h>
 #include <Ws2tcpip.h>
 #include <vector>
+#include <mutex>
+#include <filesystem>
 
 #include <gst/gst.h>
 #include <gst/rtsp-server/rtsp-server.h>
@@ -172,6 +174,7 @@ static void media_configure_cb(GstRTSPMediaFactory* factory, GstRTSPMedia* media
     }
 }
 
+std::mutex mtx;
 //////////////////////////////////////////////////////////
 int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]) 
 {
@@ -182,94 +185,103 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
     GOptionContext* optctx;
     GError* error = NULL;
 
-    std::ostringstream str_GOptionEntry_01;
-    str_GOptionEntry_01 << "Port to listen on (default: " << out_port << ")";
-    
-    std::string str_outport=std::to_string(out_port);
-    const size_t buffer_size = 32;                          // バッファのサイズ
-    static char tmp_port[buffer_size];                      // 書き込み可能なバッファ
-    //strncpy(tmp_port, str_outport.c_str(), buffer_size - 1);
-    strcpy_s(tmp_port, buffer_size, str_outport.c_str());//値コピー
+    {
+        std::lock_guard<std::mutex> lock(mtx); // ロック
 
-    std::ostringstream str_pipeline;
-    std::ostringstream sstr_channel;
+        std::ostringstream str_GOptionEntry_01;
+        str_GOptionEntry_01 << "Port to listen on (default: " << out_port << ")";
 
-    str_pipeline << "( udpsrc port=" << in_port << " caps=\"application/x-rtp,media=video,encoding-name=H264,payload=96\" ! rtph264depay ! h264parse ! rtph264pay name=pay0 pt=96 )";
-    sstr_channel << "/" << channel_name;
+        std::string str_outport = std::to_string(out_port);
+        const size_t buffer_size = 32;                          // バッファのサイズ
+        static char tmp_port[buffer_size];                      // 書き込み可能なバッファ
+        //strncpy(tmp_port, str_outport.c_str(), buffer_size - 1);
+        strcpy_s(tmp_port, buffer_size, str_outport.c_str());//値コピー
 
-    static GOptionEntry entries[] = {
-        {"port",         'p',  0, G_OPTION_ARG_STRING, &(tmp_port),  str_GOptionEntry_01.str().c_str(),               "PORT"},
-        {"disable-rtcp", '\0', 0, G_OPTION_ARG_NONE,   &disable_rtcp,"Whether RTCP should be disabled (default false)", NULL},
-        {NULL}
-    };
+        std::ostringstream str_pipeline;
+        std::ostringstream sstr_channel;
 
-    optctx = g_option_context_new("<launch line> - Test RTSP Server, Launch\n\n"
-        "Example: \"( videotestsrc ! x264enc ! rtph264pay name=pay0 pt=96 )\"");
-    g_option_context_add_main_entries(optctx, entries, NULL);
-    g_option_context_add_group(optctx, gst_init_get_option_group());
+        str_pipeline << "( udpsrc port=" << in_port << " caps=\"application/x-rtp,media=video,encoding-name=H264,payload=96\" ! rtph264depay ! h264parse ! rtph264pay name=pay0 pt=96 )";
+        sstr_channel << "/" << channel_name;
 
-    if (!g_option_context_parse(optctx, &argc, &argv, &error)) {
-        g_printerr("Error parsing options: %s\n", error->message);
+        static GOptionEntry entries[] = {
+            {"port",         'p',  0, G_OPTION_ARG_STRING, &(tmp_port),  str_GOptionEntry_01.str().c_str(),               "PORT"},
+            {"disable-rtcp", '\0', 0, G_OPTION_ARG_NONE,   &disable_rtcp,"Whether RTCP should be disabled (default false)", NULL},
+            {NULL}
+        };
+
+        optctx = g_option_context_new("<launch line> - Test RTSP Server, Launch\n\n"
+            "Example: \"( videotestsrc ! x264enc ! rtph264pay name=pay0 pt=96 )\"");
+        g_option_context_add_main_entries(optctx, entries, NULL);
+        g_option_context_add_group(optctx, gst_init_get_option_group());
+
+        if (!g_option_context_parse(optctx, &argc, &argv, &error)) {
+            g_printerr("Error parsing options: %s\n", error->message);
+            g_option_context_free(optctx);
+            g_clear_error(&error);
+            return -1;
+        }
         g_option_context_free(optctx);
-        g_clear_error(&error);
-        return -1;
-    }
-    g_option_context_free(optctx);
 
-    loop = g_main_loop_new(NULL, FALSE);
+        loop = g_main_loop_new(NULL, FALSE);
 
-    /* create a server instance */
-    server = gst_rtsp_server_new();
+        /* create a server instance */
+        server = gst_rtsp_server_new();
 
-    //g_object_set(server, "service", port, NULL);
-    g_object_set(server, "service", str_outport.c_str(), NULL);
+        //g_object_set(server, "service", port, NULL);
+        g_object_set(server, "service", str_outport.c_str(), NULL);
 
-    /* get the mount points for this server, every server has a default object
-        * that be used to map uri mount points to media factories */
-    mounts = gst_rtsp_server_get_mount_points(server);
+        /* get the mount points for this server, every server has a default object
+            * that be used to map uri mount points to media factories */
+        mounts = gst_rtsp_server_get_mount_points(server);
 
-    /* make a media factory for a test stream. The default media factory can use
-        * gst-launch syntax to create pipelines.
-        * any launch line works as long as it contains elements named pay%d. Each
-        * element with pay%d names will be a stream */
-    factory = gst_rtsp_media_factory_new();
-    gst_rtsp_media_factory_set_launch(factory, str_pipeline.str().c_str());
+        /* make a media factory for a test stream. The default media factory can use
+            * gst-launch syntax to create pipelines.
+            * any launch line works as long as it contains elements named pay%d. Each
+            * element with pay%d names will be a stream */
+        factory = gst_rtsp_media_factory_new();
+        gst_rtsp_media_factory_set_launch(factory, str_pipeline.str().c_str());
 
-    // シグナルを接続
-    g_signal_connect(factory, "media-configure",
-        G_CALLBACK(media_configure_cb),
-        loop /* ユーザーデータ */);
+        // シグナルを接続
+        g_signal_connect(factory, "media-configure",
+            G_CALLBACK(media_configure_cb),
+            loop /* ユーザーデータ */);
 
-    gst_rtsp_media_factory_set_shared(factory, TRUE);
-    gst_rtsp_media_factory_set_enable_rtcp(factory, !disable_rtcp);
+        gst_rtsp_media_factory_set_shared(factory, TRUE);
+        gst_rtsp_media_factory_set_enable_rtcp(factory, !disable_rtcp);
 
-    /* attach the test factory to the /test url */
-    gst_rtsp_mount_points_add_factory(mounts, sstr_channel.str().c_str(), factory);
+        /* attach the test factory to the /test url */
+        gst_rtsp_mount_points_add_factory(mounts, sstr_channel.str().c_str(), factory);
 
-    /* don't need the ref to the mapper anymore */
-    g_object_unref(mounts);
+        /* don't need the ref to the mapper anymore */
+        g_object_unref(mounts);
 
-    /* attach the server to the default maincontext */
-    gst_rtsp_server_attach(server, NULL);
+        /* attach the server to the default maincontext */
+        gst_rtsp_server_attach(server, NULL);
 
-    /* start serving */
-    //std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
-
-    // IPアドレス一覧を取得
-    std::vector<std::string> ipList = getLocalIPAddresses();
-    std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
-
-    // 結果の表示
-    if (ipList.empty()) {
-        std::cout << "Can not find other ip address." << std::endl;
+        /* start serving */
         //std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
-    }
-    else {
-        //std::cout << "取得したIPアドレス一覧:" << std::endl;
-        for (const auto& ip : ipList) {
-            std::cout << "Stream Ready at rtsp://"<<ip<<":" << str_outport << sstr_channel.str() << std::endl;
+
+        // IPアドレス一覧を取得
+        std::vector<std::string> ipList = getLocalIPAddresses();
+
+        std::cout << "-------------------------------------" << std::endl;
+        //std::cout << __FILE__ << " " << __func__ << std::endl;
+        //std::cout << __func__ <<" BUILD:["<< __DATE__ << " " << __TIME__<<"]" << std::endl;
+        std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
+
+        // 結果の表示
+        if (ipList.empty()) {
+            std::cout << "Can not find other ip address." << std::endl;
+            //std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
+        }
+        else {
+            //std::cout << "取得したIPアドレス一覧:" << std::endl;
+            for (const auto& ip : ipList) {
+                std::cout << "Stream Ready at rtsp://" << ip << ":" << str_outport << sstr_channel.str() << std::endl;
+            }
         }
     }
+
     g_main_loop_run(loop);
     //g_main_loop_quit(loop);
     //g_main_loop_unref(loop);
@@ -278,7 +290,6 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
     //delete tmp_port;
     return 0;
 }
-
 
 //////////////////////////////////////////////////////////
 //HLS 対応 家じゃテストできない
@@ -372,6 +383,7 @@ int OpenHLSServer(GMainLoop*& loop, int in_port, int out_port, std::string& chan
 
     // IPアドレス一覧を取得
     std::vector<std::string> ipList = getLocalIPAddresses();
+    std::cout << "-------------------------------------" << std::endl;
     std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
 
     // 結果の表示
@@ -394,8 +406,8 @@ int OpenHLSServer(GMainLoop*& loop, int in_port, int out_port, std::string& chan
     return 0;
 }
 
-
-int main(int argc, char* argv[])
+//int main(int argc, char* argv[])
+int main_single(int argc, char* argv[])
 {
     int in_port;
     int out_port;
@@ -407,8 +419,8 @@ int main(int argc, char* argv[])
     {
         std::cout << argv[0] << " : use default parametors" << std::endl;
 
-        in_port     = 5004;
-        out_port    = 8554;
+        in_port = 5004;
+        out_port = 8554;
         str_channel = "default";
     }
     else if (argc == 4)
@@ -422,7 +434,7 @@ int main(int argc, char* argv[])
     else
     {
         std::cout << "Usage : " << argv[0] << " [in_port] [out_port] [ch_name]" << std::endl
-            << "Example : " << argv[0] << " 5004 8554 ch01" << std::endl;
+            << "Example : " << argv[0] << " 5004 8554 default" << std::endl;
         return -1;
     }
 
@@ -432,16 +444,16 @@ int main(int argc, char* argv[])
         << "------------------------------" << std::endl
         << "Push Q,E,X,C or ESC for Stop" << std::endl;
 
-    GMainLoop* _loop=nullptr; //終了コマンドをスローするのに必要
+    GMainLoop* _loop = nullptr; //終了コマンドをスローするのに必要
 
-    std::thread mainLoopThread([&]() {OpenRTSPServer(_loop, in_port, out_port, str_channel, argc, argv);});
- 
-    while (true) 
+    std::thread mainLoopThread([&]() {OpenRTSPServer(_loop, in_port, out_port, str_channel, argc, argv); });
+
+    while (true)
     {
         //char c = std::cin.get();
         int c = _getch();
         if (
-            c == 'q' || c == 'Q' || 
+            c == 'q' || c == 'Q' ||
             c == 'e' || c == 'E' ||
             c == 'x' || c == 'X' ||
             c == 'c' || c == 'C' ||
@@ -455,6 +467,110 @@ int main(int argc, char* argv[])
     // メインループ終了を待つ
     mainLoopThread.join();
     g_main_loop_unref(_loop);
+
+    return 0;
+}
+
+//windpws serverで勝手に停止したので
+//開発環境では上手くいくのだけど?
+int main(int argc, char* argv[])
+//int main(int argc, char* argv[])
+{
+    int in_port;
+    int out_port;
+    std::string str_channel;
+    int number_ob_channels = 1;
+
+    //引数解析　
+    // Gstreamer 標準のg_option_context_parseも機能はそのままとってあるが・・・ outポートを変える機能は標準には無さそうなので
+    std::cout << std::filesystem::path(__FILE__).filename() << " BUILD:[" << __DATE__ << " " << __TIME__ << "]" << std::endl;
+    if (argc == 1)
+    {
+        std::cout << "Usage : " << argv[0] << " [in_port] [out_port] [ch_name] [number of channels(defaul=1)]" << std::endl;
+        std::cout << argv[0] << " : use default parametors" << std::endl;
+
+        in_port = 5004;
+        out_port = 8554;
+        str_channel = "default";
+    }
+    else if (argc == 4)
+    {
+        //std::cout << argv[0] << " : use parametors" << std::endl;
+        std::cout << "RTSPSever.exe" << " : use parametors" << std::endl;
+
+        in_port = std::stoi(argv[1]);
+        out_port = std::stoi(argv[2]);
+        str_channel = argv[3];
+        number_ob_channels = 1;
+    }
+    else if (argc == 5)
+    {
+        //std::cout << argv[0] << " : use parametors" << std::endl;
+        std::cout << "RTSPSever.exe" << " : use parametors" << std::endl;
+
+        in_port = std::stoi(argv[1]);
+        out_port = std::stoi(argv[2]);
+        str_channel = argv[3];
+        number_ob_channels = std::stoi(argv[4]);
+    }
+    else
+    {
+        std::cout << "Usage : " << argv[0] << " [in_port] [out_port] [ch_name] [number of channels(defaul=1)]" << std::endl
+            << "Example : " << argv[0] << " 5004 8554 ch01" << std::endl;
+        std::cout << std::filesystem::path(__FILE__).filename() << " BUILD:[" << __DATE__ << " " << __TIME__ << "]" << std::endl;
+        return -1;
+    }
+
+    std::vector<std::thread> threads;
+    std::vector<GMainLoop*> _loops(number_ob_channels, nullptr); // GMainLoop ポインタのベクター
+
+    //std::vector<GMainLoop*> _loops;
+    //_loops.reserve(number_ob_channels);
+
+    //GMainLoop* _loop = nullptr; //終了コマンドをスローするのに必要
+
+    for (int i = 0; i < number_ob_channels; i++)
+    {
+        std::cout << "[in_port]  : " << in_port + i << std::endl
+            << "[out_port] : " << out_port + i << std::endl
+            << "[ch_name]  : " << str_channel << std::endl
+            << "[number of channels]  : " << number_ob_channels << std::endl
+            << "------------------------------" << std::endl
+            << "Push Q,E,X,C or ESC for Stop" << std::endl;
+
+        // スレッドを起動し、スレッド管理ベクターに追加
+        //threads.emplace_back(OpenHLSServer, std::ref(_loops[i]), in_port + i, out_port + i, std::ref(str_channel), argc, argv);
+        threads.emplace_back(OpenRTSPServer, std::ref(_loops[i]), in_port + i, out_port + i, std::ref(str_channel), argc, argv);
+    }
+    //std::thread mainLoopThread([&]() {OpenRTSPServer(_loop, in_port, out_port, str_channel, argc, argv); });
+
+    while (true)
+    {
+        char c = std::cin.get();
+        //int c = _getch();
+        if (
+            c == 'q' || c == 'Q' ||
+            c == 'e' || c == 'E' ||
+            c == 'x' || c == 'X' ||
+            c == 'c' || c == 'C' ||
+            c == 27)
+        { // 'q' または 'ESC'キー
+            std::cout << "Stop requested, quitting main loop..." << std::endl;
+            for (int i = 0; i < number_ob_channels; i++)
+                g_main_loop_quit(_loops[i]);
+            break;
+        }
+    }
+    // メインループ終了を待つ
+    // 全てのスレッドを join
+    for (auto& thread : threads) {
+        if (thread.joinable()) {
+            thread.join();
+        }
+    }
+
+    for (int i = 0; i < number_ob_channels; i++)
+        g_main_loop_unref(_loops[i]);
 
     return 0;
 }
