@@ -22,4 +22,7 @@
   <ItemGroup>
     <Text Include="old_source.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="start_rtspserver.bat" />
+  </ItemGroup>
 </Project>

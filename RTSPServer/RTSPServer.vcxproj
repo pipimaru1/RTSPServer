@@ -141,6 +141,9 @@
   <ItemGroup>
     <Text Include="old_source.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="start_rtspserver.bat" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

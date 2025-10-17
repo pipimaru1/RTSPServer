@@ -36,7 +36,7 @@
 // RTSPServer.exe 5005 8555 sisi
 
 ///////////////////////////////////////////////////////////////////
-// テスト用ffmpeg例
+// テスト用ffmpeg例 USBカメラの映像をRTSPserverに送信する例
 // 標準画質
 // ffmpeg -f dshow -i video="Logicool BRIO"  -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency  -f rtp rtp://127.0.0.1:5004
 // HD画質
