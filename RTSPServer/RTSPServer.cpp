@@ -32,19 +32,55 @@
 // これが test - launch 経由で RTSP のストリームにも反映される。
 
 ///////////////////////////////////////////////////////////////////
-// テスト用
+// テスト コマンド
 // RTSPServer.exe 5005 8555 sisi
+// RTSPServer.exe 5004 8554 default 2
 
 ///////////////////////////////////////////////////////////////////
 // テスト用ffmpeg例 USBカメラの映像をRTSPserverに送信する例
+// 家のPC
 // 標準画質
 // ffmpeg -f dshow -i video="Logicool BRIO"  -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency  -f rtp rtp://127.0.0.1:5004
 // HD画質
 // ffmpeg -f dshow -framerate 30 -video_size 1920x1080 -i video="Logicool BRIO" -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5004
 // ffmpeg -f dshow -framerate 30 -video_size 1920x1080 -i video="Logicool BRIO" -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5005
 
+// 135x "FHD Camera"
+// ffmpeg -f dshow -framerate 30 -video_size 1920x1080 -i video="FHD Camera" -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5004
+
+
+///////////////////////////////////////////////////////////////////
+// GUI（IIS マネージャ）の手順
+// 「IIS マネージャ」（inetmgr）を開く
+// 左ペイン［接続］で サーバー名 > Sites > hls（あなたのサイト）をクリック
+// 中央ペイン上部が ［機能ビュー］ になっていることを確認（［コンテンツビュー］ではない）
+// アイコン一覧から ［MIME の種類］(アイコン) をダブルクリック
+// 右側［操作］の ［追加…］ をクリックして、次の2件を追加
+// 拡張子 : .m3u8 / MIME の種類 : application / vnd.apple.mpegurl
+// 拡張子 : .ts / MIME の種類 : video / mp2t
+// 変更は即時反映。必要ならサイト「hls」を 再起動（右側［操作］→［停止］→［開始］）
+//
+// MIEMEのアイコンが無い場合
+// コントロールパネル「プログラムと機能」「Windowsの機能」
+// IIS-WEB管理ツール-IIS管理サービス IIS管理スクリプトおよびツール を入れる
+// 
+///////////////////////////////////////////////////////////////////
+// C:\hls\web.config を作成（または追記）すると同じ効果が出ます：
+// <?xml version="1.0" encoding="utf-8"?>
+// <configuration>
+// <system.webServer>
+// <staticContent>
+// <mimeMap fileExtension = ".m3u8" mimeType = "application/vnd.apple.mpegurl" />
+// <mimeMap fileExtension = ".ts"   mimeType = "video/mp2t" />
+// </staticContent>
+// </system.webServer>
+// </configuration>
+// 
+// 成功
+// http://140.81.145.4:8080/
 ///////////////////////////////////////////////////////////////////
 // テスト用FFplay例
+//ffplay rtsp://127.0.0.1:8554/default
 //ffplay rtsp://127.0.0.1:8554/test
 //ffplay rtsp://127.0.0.1:8555/sisi
 
@@ -174,6 +210,53 @@ static void media_configure_cb(GstRTSPMediaFactory* factory, GstRTSPMedia* media
     }
 }
 
+//////////////////////////////////////////////////////////
+//ダミーRTSPクライアントの起動
+void StartDummyRtspClient(GMainLoop* loop, int out_port, const std::string& channel) {
+    std::ostringstream p;
+    p << "playbin uri=rtsp://127.0.0.1:" << out_port << "/" << channel
+        << " video-sink=fakesink audio-sink=fakesink";
+    GError* err = nullptr;
+    GstElement* pipe = gst_parse_launch(p.str().c_str(), &err);
+    if (!pipe) { g_printerr("kick client parse error: %s\n", err ? err->message : "unknown"); if (err) g_error_free(err); return; }
+    GstBus* bus = gst_element_get_bus(pipe);
+    gst_bus_add_watch(bus, bus_watch_callback, loop);
+    gst_object_unref(bus);
+    gst_element_set_state(pipe, GST_STATE_PLAYING);
+}
+
+// 1回キックして数秒で切断するダミークライアント
+void KickRtspOnceAndDisconnect(GMainLoop* loop, int out_port, const std::string& channel) {
+    std::ostringstream p;
+    p << "playbin uri=rtsp://127.0.0.1:" << out_port << "/" << channel
+        << " video-sink=fakesink audio-sink=fakesink";
+
+    GError* err = nullptr;
+    GstElement* pipe = gst_parse_launch(p.str().c_str(), &err);
+    if (!pipe) {
+        g_printerr("kick parse error: %s\n", err ? err->message : "unknown");
+        if (err) g_error_free(err);
+        return;
+    }
+
+    // 状態遷移・エラー監視（任意）
+    GstBus* bus = gst_element_get_bus(pipe);
+    gst_bus_add_watch(bus, bus_watch_callback, loop);
+    gst_object_unref(bus);
+
+    gst_element_set_state(pipe, GST_STATE_PLAYING);
+
+    // ★ 2秒後に自動で切断（TEARDOWN 相当）
+    g_timeout_add_seconds(30, [](gpointer data) -> gboolean {
+        GstElement* p = static_cast<GstElement*>(data);
+        gst_element_set_state(p, GST_STATE_NULL);
+        gst_object_unref(p);
+        g_print("Dummy RTSP kick disconnected.\n");
+        return FALSE; // 1回だけ
+        }, pipe);
+}
+
+//////////////////////////////////////////////////////////
 std::mutex mtx;
 //////////////////////////////////////////////////////////
 int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]) 
@@ -188,6 +271,13 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
     {
         std::lock_guard<std::mutex> lock(mtx); // ロック
 
+        bool hls_on = false;
+
+        //HLS用のディレクトリ作成
+        std::string hls_dir = "C:/hls/" + channel_name + "-" + std::to_string(out_port);
+        std::filesystem::create_directories(hls_dir);
+
+
         std::ostringstream str_GOptionEntry_01;
         str_GOptionEntry_01 << "Port to listen on (default: " << out_port << ")";
 
@@ -200,7 +290,63 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
         std::ostringstream str_pipeline;
         std::ostringstream sstr_channel;
 
-        str_pipeline << "( udpsrc port=" << in_port << " caps=\"application/x-rtp,media=video,encoding-name=H264,payload=96\" ! rtph264depay ! h264parse ! rtph264pay name=pay0 pt=96 )";
+        if(0)
+        {
+            str_pipeline
+                << "( udpsrc port=" << in_port
+                << " caps=\"application/x-rtp,media=video,encoding-name=H264,payload=96\" "
+                << "! rtph264depay ! h264parse "
+                << "! rtph264pay name=pay0 pt=96 )";
+        }
+        else
+        {
+            str_pipeline
+                << "( udpsrc port=" << in_port
+                << " caps=\"application/x-rtp,media=video,encoding-name=H264,payload=96\" "
+                // 余裕があれば: << "! rtpjitterbuffer drop-on-late=true latency=100 "
+                << "! rtph264depay "
+                << "! h264parse config-interval=1 "
+                << "! tee name=t "
+                // ---- RTSP 枝（pay0 必須）
+                << "t. ! queue "
+                << "! h264parse config-interval=1 "
+                << "! rtph264pay name=pay0 pt=96 "
+                // ---- HLS 枝（parserをもう一段入れる。avc capsfilterは外す）
+                << "t. ! queue "
+                << "! h264parse config-interval=1 "
+                << "! mpegtsmux "
+                << "! hlssink "
+                << "location=" << hls_dir << "/seg%05d.ts "
+                << "playlist-location=" << hls_dir << "/index.m3u8 "
+                << "target-duration=2 max-files=5 "
+                << ")";
+
+            str_pipeline.str("");
+            str_pipeline
+                << "( udpsrc port=" << in_port
+                << " caps=\\\"application/x-rtp,media=video,encoding-name=H264,payload=96\\\" "
+                << "! rtph264depay "
+                << "! h264parse config-interval=1 "          // まず全体用のparser
+                << "! tee name=t "
+                // ---- RTSP 枝（★リーキーqueueで詰まり回避）
+                << "t. ! queue max-size-buffers=1 max-size-bytes=0 max-size-time=0 leaky=downstream "
+                << "! h264parse config-interval=1 "
+                << "! rtph264pay name=pay0 pt=96 "
+                // ---- HLS 枝
+                << "t. ! queue "
+                << "! h264parse config-interval=1 "
+                << "! mpegtsmux "
+                << "! hlssink "
+                << "location=" << hls_dir << "/seg%05d.ts "
+                << "playlist-location=" << hls_dir << "/index.m3u8 "
+                << "target-duration=2 max-files=5 "
+                << ")";
+
+            
+            std::cerr << "str_pipeline : " << str_pipeline.str() << std::endl;
+            hls_on = true;
+        }
+
         sstr_channel << "/" << channel_name;
 
         static GOptionEntry entries[] = {
@@ -247,7 +393,14 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
             loop /* ユーザーデータ */);
 
         gst_rtsp_media_factory_set_shared(factory, TRUE);
+        //gst_rtsp_media_factory_set_shared(factory, TRUE);
+        //HLS
         gst_rtsp_media_factory_set_enable_rtcp(factory, !disable_rtcp);
+        //gst_rtsp_media_factory_set_enable_rtcp(factory, !disable_rtcp);
+
+        // ★ 追加：クライアントがいなくても止めない
+        gst_rtsp_media_factory_set_suspend_mode(factory, GST_RTSP_SUSPEND_MODE_NONE);
+        //gst_rtsp_media_factory_set_suspend_mode(factory, GST_RTSP_SUSPEND_MODE_NONE);
 
         /* attach the test factory to the /test url */
         gst_rtsp_mount_points_add_factory(mounts, sstr_channel.str().c_str(), factory);
@@ -257,6 +410,10 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
 
         /* attach the server to the default maincontext */
         gst_rtsp_server_attach(server, NULL);
+
+		//ダミーRTSPクライアントの起動
+        StartDummyRtspClient(loop, out_port, channel_name);
+        //KickRtspOnceAndDisconnect(loop, out_port, channel_name);
 
         /* start serving */
         //std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
@@ -280,14 +437,14 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
                 std::cout << "Stream Ready at rtsp://" << ip << ":" << str_outport << sstr_channel.str() << std::endl;
             }
         }
+        //HLSの準備完了表示
+        if(hls_on)
+        {
+            std::cout << "Stream Ready at HLS:" << hls_dir.c_str() << std::endl;
+        }
     }
 
     g_main_loop_run(loop);
-    //g_main_loop_quit(loop);
-    //g_main_loop_unref(loop);
-    //gst_element_set_state(pipeline, GST_STATE_NULL);
-    //gst_object_unref(pipeline);
-    //delete tmp_port;
     return 0;
 }
 
