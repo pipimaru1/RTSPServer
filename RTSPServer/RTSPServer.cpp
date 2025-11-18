@@ -174,21 +174,23 @@ std::vector<std::string> getLocalIPAddresses()
 //異常があった時のコールバック関数
 static gboolean bus_watch_callback(GstBus* bus, GstMessage* msg, gpointer user_data) 
 {
-    switch (GST_MESSAGE_TYPE(msg)) {
-    case GST_MESSAGE_ERROR: {
-        GError* err = NULL;
-        gchar* debug = NULL;
-        gst_message_parse_error(msg, &err, &debug);
-        g_printerr("Error: %s\n", err->message);
-        g_error_free(err);
-        g_free(debug);
-        break;
-    }
-    case GST_MESSAGE_EOS:
-        g_print("End of stream\n");
-        break;
-    default:
-        break;
+    switch (GST_MESSAGE_TYPE(msg)) 
+    {
+        case GST_MESSAGE_ERROR: 
+        {
+            GError* err = NULL;
+            gchar* debug = NULL;
+            gst_message_parse_error(msg, &err, &debug);
+            g_printerr("Error: %s\n", err->message);
+            g_error_free(err);
+            g_free(debug);
+            break;
+        }
+        case GST_MESSAGE_EOS:
+            g_print("End of stream\n");
+            break;
+        default:
+            break;
     }
     return TRUE;
 }
@@ -563,71 +565,6 @@ int OpenHLSServer(GMainLoop*& loop, int in_port, int out_port, std::string& chan
     return 0;
 }
 
-//int main(int argc, char* argv[])
-int main_single(int argc, char* argv[])
-{
-    int in_port;
-    int out_port;
-    std::string str_channel;
-
-    //引数解析　
-    // Gstreamer 標準のg_option_context_parseも機能はそのままとってあるが・・・ outポートを変える機能は標準には無さそうなので
-    if (argc == 1)
-    {
-        std::cout << argv[0] << " : use default parametors" << std::endl;
-
-        in_port = 5004;
-        out_port = 8554;
-        str_channel = "default";
-    }
-    else if (argc == 4)
-    {
-        std::cout << argv[0] << " : use parametors" << std::endl;
-
-        in_port = std::stoi(argv[1]);
-        out_port = std::stoi(argv[2]);
-        str_channel = argv[3];
-    }
-    else
-    {
-        std::cout << "Usage : " << argv[0] << " [in_port] [out_port] [ch_name]" << std::endl
-            << "Example : " << argv[0] << " 5004 8554 default" << std::endl;
-        return -1;
-    }
-
-    std::cout << "[in_port]  : " << in_port << std::endl
-        << "[out_port] : " << out_port << std::endl
-        << "[ch_name]  : " << str_channel << std::endl
-        << "------------------------------" << std::endl
-        << "Push Q,E,X,C or ESC for Stop" << std::endl;
-
-    GMainLoop* _loop = nullptr; //終了コマンドをスローするのに必要
-
-    std::thread mainLoopThread([&]() {OpenRTSPServer(_loop, in_port, out_port, str_channel, argc, argv); });
-
-    while (true)
-    {
-        //char c = std::cin.get();
-        int c = _getch();
-        if (
-            c == 'q' || c == 'Q' ||
-            c == 'e' || c == 'E' ||
-            c == 'x' || c == 'X' ||
-            c == 'c' || c == 'C' ||
-            c == 27)
-        { // 'q' または 'ESC'キー
-            std::cout << "Stop requested, quitting main loop..." << std::endl;
-            g_main_loop_quit(_loop);
-            break;
-        }
-    }
-    // メインループ終了を待つ
-    mainLoopThread.join();
-    g_main_loop_unref(_loop);
-
-    return 0;
-}
-
 //windpws serverで勝手に停止したので
 //開発環境では上手くいくのだけど?
 int main(int argc, char* argv[])
@@ -731,3 +668,71 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+
+/*
+//int main(int argc, char* argv[])
+int main_single(int argc, char* argv[])
+{
+    int in_port;
+    int out_port;
+    std::string str_channel;
+
+    //引数解析　
+    // Gstreamer 標準のg_option_context_parseも機能はそのままとってあるが・・・ outポートを変える機能は標準には無さそうなので
+    if (argc == 1)
+    {
+        std::cout << argv[0] << " : use default parametors" << std::endl;
+
+        in_port = 5004;
+        out_port = 8554;
+        str_channel = "default";
+    }
+    else if (argc == 4)
+    {
+        std::cout << argv[0] << " : use parametors" << std::endl;
+
+        in_port = std::stoi(argv[1]);
+        out_port = std::stoi(argv[2]);
+        str_channel = argv[3];
+    }
+    else
+    {
+        std::cout << "Usage : " << argv[0] << " [in_port] [out_port] [ch_name]" << std::endl
+            << "Example : " << argv[0] << " 5004 8554 default" << std::endl;
+        return -1;
+    }
+
+    std::cout << "[in_port]  : " << in_port << std::endl
+        << "[out_port] : " << out_port << std::endl
+        << "[ch_name]  : " << str_channel << std::endl
+        << "------------------------------" << std::endl
+        << "Push Q,E,X,C or ESC for Stop" << std::endl;
+
+    GMainLoop* _loop = nullptr; //終了コマンドをスローするのに必要
+
+    std::thread mainLoopThread([&]() {OpenRTSPServer(_loop, in_port, out_port, str_channel, argc, argv); });
+
+    while (true)
+    {
+        //char c = std::cin.get();
+        int c = _getch();
+        if (
+            c == 'q' || c == 'Q' ||
+            c == 'e' || c == 'E' ||
+            c == 'x' || c == 'X' ||
+            c == 'c' || c == 'C' ||
+            c == 27)
+        { // 'q' または 'ESC'キー
+            std::cout << "Stop requested, quitting main loop..." << std::endl;
+            g_main_loop_quit(_loop);
+            break;
+        }
+    }
+    // メインループ終了を待つ
+    mainLoopThread.join();
+    g_main_loop_unref(_loop);
+
+    return 0;
+}
+
+*/
