@@ -110,7 +110,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(GSTREAMER_1_0_ROOT_X86_64)\lib\gstreamer-1.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\glib-2.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\gstrtspserver-1.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\gobject-2.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(GSTREAMER_1_0_ROOT_X86_64)\lib\gstreamer-1.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\glib-2.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\gstrtspserver-1.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\gobject-2.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\gstrtsp-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -129,7 +129,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(GSTREAMER_1_0_ROOT_X86_64)\lib\gstreamer-1.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\glib-2.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\gstrtspserver-1.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\gobject-2.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(GSTREAMER_1_0_ROOT_X86_64)\lib\gstreamer-1.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\glib-2.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\gstrtspserver-1.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\gobject-2.0.lib;$(GSTREAMER_1_0_ROOT_X86_64)\lib\gstrtsp-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -137,12 +137,16 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(GSTREAMER_1_0_ROOT_X86_64)\include\gstreamer-1.0;$(GSTREAMER_1_0_ROOT_X86_64)\include\glib-2.0;$(GSTREAMER_1_0_ROOT_X86_64)\lib\glib-2.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <ClCompile Include="RTSPServerCore.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="old_source.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="start_rtspserver.bat" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="RTSPServer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

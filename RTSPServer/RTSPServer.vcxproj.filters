@@ -18,11 +18,19 @@
     <ClCompile Include="RTSPServer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="RTSPServerCore.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="old_source.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="start_rtspserver.bat" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="RTSPServer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
