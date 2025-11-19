@@ -385,11 +385,33 @@ static GstRTSPMedia* prewarm_media_without_client(GstRTSPMediaFactory* factory,
     // 下の element->PLAYING だけで十分です（実際それで動きます）。
 
     // パイプラインを PLAYING に
+    //if (GstElement* element = gst_rtsp_media_get_element(media)) {
+    //    gst_element_set_state(element, GST_STATE_PLAYING);
+    //    if (GstBus* bus = gst_element_get_bus(element)) {
+    //        gst_bus_add_watch(bus, bus_watch_callback, loop);
+    //        gst_object_unref(bus);
+    //    }
+    //    gst_object_unref(element);
+    //}
     if (GstElement* element = gst_rtsp_media_get_element(media)) {
         gst_element_set_state(element, GST_STATE_PLAYING);
+
         if (GstBus* bus = gst_element_get_bus(element)) {
-            gst_bus_add_watch(bus, bus_watch_callback, loop);
+            // ★ MediaCtx を作成して正しく渡す
+            MediaCtx* mctx = g_new0(MediaCtx, 1);
+            mctx->loop = loop;
+            mctx->pipeline = GST_ELEMENT(gst_object_ref(element)); // パイプライン参照を保持
+
+            gst_bus_add_watch(bus, bus_watch_callback, mctx);
             gst_object_unref(bus);
+
+            // media 破棄時に mctx も解放（pipeline も unref）
+            g_object_set_data_full(G_OBJECT(media), "prewarm-ctx", mctx,
+                [](gpointer p) {
+                    MediaCtx* c = static_cast<MediaCtx*>(p);
+                    if (c->pipeline) gst_object_unref(c->pipeline);
+                    g_free(c);
+                });
         }
         gst_object_unref(element);
     }
@@ -553,12 +575,12 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
         // StartDummyRtspClient(loop, out_port, channel_name);
 
         // ★ パターンC：ダミー無しでメディア起動
-        static GstRTSPMedia* g_prewarmed_media = nullptr;
-        g_prewarmed_media = prewarm_media_without_client(
-            factory, server, out_port, channel_name, loop);
-        if (!g_prewarmed_media) {
-            g_printerr("prewarm failed; HLS may need an initial client.\n");
-        }
+        //static GstRTSPMedia* g_prewarmed_media = nullptr;
+        //g_prewarmed_media = prewarm_media_without_client(
+        //    factory, server, out_port, channel_name, loop);
+        //if (!g_prewarmed_media) {
+        //    g_printerr("prewarm failed; HLS may need an initial client.\n");
+        //}
 
         //HLS
         gst_rtsp_media_factory_set_enable_rtcp(factory, !disable_rtcp);
