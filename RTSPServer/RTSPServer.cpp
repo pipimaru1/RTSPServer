@@ -87,6 +87,62 @@
 //テスト用HLSURL
 // http://127.0.0.1:8080/default.htm
 
+/* 受信用　html
+
+<video id="v" controls autoplay muted playsinline></video>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+  const url = '/default-8554/index.m3u8';
+  const video = document.getElementById('v');
+
+  if (Hls.isSupported()) {
+    const hls = new Hls({
+      // ライブ用のざっくりした設定例（必要に応じて調整）
+      liveSyncDurationCount: 3,        // 先頭から 3 セグメント後ろくらいを再生位置に
+      liveMaxLatencyDurationCount: 10, // 最大で 10 セグメント遅れまで許容
+      maxBufferLength: 30,             // 30秒分までバッファ
+      maxMaxBufferLength: 60
+    });
+
+    hls.loadSource(url);
+    hls.attachMedia(video);
+
+    // マニフェスト解析後に play() を叩いておく
+    hls.on(Hls.Events.MANIFEST_PARSED, function () {
+      video.play().catch(err => {
+        console.log('Autoplay blocked:', err);
+      });
+    });
+
+    // デバッグ用：エラー内容をコンソールに出す
+    hls.on(Hls.Events.ERROR, function (event, data) {
+      console.log('HLS error:', data);
+      if (data.fatal) {
+        switch (data.type) {
+          case Hls.ErrorTypes.NETWORK_ERROR:
+            hls.startLoad();
+            break;
+          case Hls.ErrorTypes.MEDIA_ERROR:
+            hls.recoverMediaError();
+            break;
+          default:
+            hls.destroy();
+            break;
+        }
+      }
+    });
+  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    // Safari のネイティブ HLS
+    video.src = url;
+    video.addEventListener('loadedmetadata', () => video.play());
+  } else {
+    video.src = url; // 最低限のフォールバック
+  }
+</script>
+
+
+*/
+
 #define _WIN32_WINNT 0x0600  // inet_ntop を利用するために必要な場合がある(Windows Vista以降)
 #include <thread>
 #include <string>

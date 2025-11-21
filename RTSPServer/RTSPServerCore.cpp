@@ -482,8 +482,21 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
                 << "! hlssink "
                 << "location=" << hls_dir << "/seg%05d.ts "
                 << "playlist-location=" << hls_dir << "/index.m3u8 "
-                << "target-duration=2 max-files=5 "
+                //<< "target-duration=2 max-files=5 "
+                << "target-duration=2 "
+                << "playlist-length=20 "   // プレイリストには 20 セグメント載せる（= 約40秒分）
+                << "max-files=40 "         // TSファイルも 40 個まで保持
                 << ")";
+
+                //playlist - length
+                //プレイリストに載せるセグメント数。デフォルトは 5 です
+                //gstreamer.freedesktop.org
+                //→ ここを 10〜20 くらいに増やすと、「少し遅れて再生開始しても、まだそのセグメントが残っている」状態を作れます。
+                //max - files
+                //実際にディスクに残す.ts の数。playlist - length と同じか、それより少し多めに。
+                //target - duration = 2 はそのままでも構いませんが、
+                //配信の遅延を多少増やしても良いなら、target - duration = 3 か 4 にすると、
+                //「1 セグメントあたりのデータ量が増えて、バッファが安定しやすい」という面もあります。
 
 #ifdef _DEBUG            
             std::cerr << "str_pipeline : " << str_pipeline.str() << std::endl;
@@ -546,7 +559,7 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
         //機能しないような気がする
         //KickRtspOnceAndDisconnect(loop, out_port, channel_name, 20);
 
-#else USE_DUMMY_CLIENT
+#else //USE_DUMMY_CLIENT
 
         factory = gst_rtsp_media_factory_new();
         gst_rtsp_media_factory_set_launch(factory, str_pipeline.str().c_str());
