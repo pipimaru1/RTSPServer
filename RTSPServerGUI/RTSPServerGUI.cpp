@@ -84,14 +84,10 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             return (INT_PTR)TRUE;
         }break;
 
-        //case WM_APP_RX_STATUS:
-        //{
-        //    const bool receiving = (wParam != 0);
-        //    CheckDlgButton(hDlg, IDC_CHK01, receiving ? BST_CHECKED : BST_UNCHECKED);
-        //    return (INT_PTR)TRUE;
-        //}
         case WM_APP_RX_STATUS:
         {
+            const bool receiving = (wParam != 0);
+            CheckDlgButton(hDlg, IDC_CHK01, receiving ? BST_CHECKED : BST_UNCHECKED);
             return (INT_PTR)TRUE;
         }
 
@@ -144,7 +140,7 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 {
                     g_server.Stop();
                     SetRunningUi(hDlg, false);
-                    //CheckDlgButton(hDlg, IDC_CHK01, BST_UNCHECKED);
+                    CheckDlgButton(hDlg, IDC_CHK01, BST_UNCHECKED);
                     return (INT_PTR)TRUE;
                 }
                 case IDOK:
@@ -155,6 +151,7 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                         g_server.Stop();
 
                     SaveSettings(hDlg);
+                    SetGuiNotifyHwnd(nullptr);
                     EndDialog(hDlg, id);
                     return (INT_PTR)TRUE;
                 }break;
@@ -162,8 +159,15 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         }break;
 
         case WM_CLOSE:
-        EndDialog(hDlg, IDCANCEL);
-        return (INT_PTR)TRUE;
+        {
+            if (g_server.IsRunning())
+                g_server.Stop();
+
+            SaveSettings(hDlg);
+            SetGuiNotifyHwnd(nullptr);
+            EndDialog(hDlg, IDCANCEL);
+            return (INT_PTR)TRUE;
+		}break;
     }
 
     return (INT_PTR)FALSE;

@@ -86,14 +86,16 @@ std::wstring GetIniPath()
     wchar_t path[MAX_PATH]{};
     GetModuleFileNameW(nullptr, path, MAX_PATH);
 
-    std::wstring p = path;
+    //std::wstring p = path;
     //auto pos = p.find_last_of(L"\\/");
-    auto pos = p.find_last_of(L"");
-    if (pos != std::wstring::npos)
-        p = p.substr(0, pos + 1);
+    //if (pos != std::wstring::npos)
+    //    p = p.substr(0, pos + 1);
 
-    p += L"settings.ini";
-    return p;
+    //p += L"settings.ini";
+    //return p;
+
+    std::filesystem::path exe(path);
+    return (exe.parent_path() / L"settings.ini").wstring();
 }
 
 void SaveSettings(HWND hDlg)
