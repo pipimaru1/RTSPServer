@@ -171,12 +171,6 @@
 //static char* port = (char*)DEFAULT_RTSP_PORT;           
 extern gboolean disable_rtcp = DEFAULT_DISABLE_RTCP;
 
-
-
-
-
-
-
 //windpws serverで勝手に停止したので
 //開発環境では上手くいくのだけど?
 int main(int argc, char* argv[])

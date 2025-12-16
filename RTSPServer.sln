@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35527.113 d17.12
+VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RTSPServer", "RTSPServer\RTSPServer.vcxproj", "{A7C54600-4930-40A0-9068-5F6E93400193}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RTSPServerGUI", "RTSPServerGUI\RTSPServerGUI.vcxproj", "{A16A3309-9E16-4C13-BC2D-5DB455F1001C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,14 @@ Global
 		{A7C54600-4930-40A0-9068-5F6E93400193}.Release|x64.Build.0 = Release|x64
 		{A7C54600-4930-40A0-9068-5F6E93400193}.Release|x86.ActiveCfg = Release|Win32
 		{A7C54600-4930-40A0-9068-5F6E93400193}.Release|x86.Build.0 = Release|Win32
+		{A16A3309-9E16-4C13-BC2D-5DB455F1001C}.Debug|x64.ActiveCfg = Debug|x64
+		{A16A3309-9E16-4C13-BC2D-5DB455F1001C}.Debug|x64.Build.0 = Debug|x64
+		{A16A3309-9E16-4C13-BC2D-5DB455F1001C}.Debug|x86.ActiveCfg = Debug|Win32
+		{A16A3309-9E16-4C13-BC2D-5DB455F1001C}.Debug|x86.Build.0 = Debug|Win32
+		{A16A3309-9E16-4C13-BC2D-5DB455F1001C}.Release|x64.ActiveCfg = Release|x64
+		{A16A3309-9E16-4C13-BC2D-5DB455F1001C}.Release|x64.Build.0 = Release|x64
+		{A16A3309-9E16-4C13-BC2D-5DB455F1001C}.Release|x86.ActiveCfg = Release|Win32
+		{A16A3309-9E16-4C13-BC2D-5DB455F1001C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
