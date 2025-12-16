@@ -20,6 +20,8 @@
 #include <vector>
 #include <mutex>
 #include <filesystem>
+#include <array>
+#include <string_view>
 
 #include <gst/gst.h>
 #include <gst/rtsp-server/rtsp-server.h>

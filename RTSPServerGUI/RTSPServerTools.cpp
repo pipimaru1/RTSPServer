@@ -98,23 +98,26 @@ std::wstring GetIniPath()
     return (exe.parent_path() / L"settings.ini").wstring();
 }
 
-void SaveSettings(HWND hDlg)
+void SaveSettings(
+    HWND hDlg, 
+    UINT _IDC_EDIT_PORTIN, 
+    UINT _IDC_EDIT_PORTOUT, 
+    UINT _IDC_EDIT_PORTNAME
+)
 {
     const std::wstring ini = GetIniPath();
 
     wchar_t buf[256]{};
 
-    GetDlgItemTextW(hDlg, IDC_EDIT_PORTIN01, buf, 256);
+    GetDlgItemTextW(hDlg, _IDC_EDIT_PORTIN, buf, 256);
     WritePrivateProfileStringW(L"Server", L"InPort", buf, ini.c_str());
-
-    GetDlgItemTextW(hDlg, IDC_EDIT_PORTOUT01, buf, 256);
+    GetDlgItemTextW(hDlg, _IDC_EDIT_PORTOUT, buf, 256);
     WritePrivateProfileStringW(L"Server", L"OutPort", buf, ini.c_str());
-
-    GetDlgItemTextW(hDlg, IDC_EDIT_PORTNAME01, buf, 256);
+    GetDlgItemTextW(hDlg, _IDC_EDIT_PORTNAME, buf, 256);
     WritePrivateProfileStringW(L"Server", L"Channel", buf, ini.c_str());
 }
 
-void LoadSettings(HWND hDlg)
+void LoadSettings(HWND hDlg, UINT _IDC_EDIT_PORTIN, UINT _IDC_EDIT_PORTOUT, UINT _IDC_EDIT_PORTNAME)
 {
     const std::wstring ini = GetIniPath();
 
@@ -126,26 +129,32 @@ void LoadSettings(HWND hDlg)
 
     wchar_t tmp[32]{};
     _snwprintf_s(tmp, _TRUNCATE, L"%d", inPort);
-    SetDlgItemTextW(hDlg, IDC_EDIT_PORTIN01, tmp);
+    SetDlgItemTextW(hDlg, _IDC_EDIT_PORTIN, tmp);
 
     _snwprintf_s(tmp, _TRUNCATE, L"%d", outPort);
-    SetDlgItemTextW(hDlg, IDC_EDIT_PORTOUT01, tmp);
+    SetDlgItemTextW(hDlg, _IDC_EDIT_PORTOUT, tmp);
 
-    SetDlgItemTextW(hDlg, IDC_EDIT_PORTNAME01, channel);
+    SetDlgItemTextW(hDlg, _IDC_EDIT_PORTNAME, channel);
 }
 
-void SetRunningUi(HWND hDlg, bool running)
+void SetRunningUi(HWND hDlg, bool running, 
+    UINT _IDC_BTN_START,
+	UINT _IDC_BTN_STOP,
+    UINT _IDC_EDIT_PORTIN,
+    UINT _IDC_EDIT_PORTOUT,
+	UINT _IDC_EDIT_PORTNAME
+)
 {
     // ステータスチェック（表示用：ユーザー操作させないなら Disable）
     //CheckDlgButton(hDlg, IDC_CHK01, running ? BST_CHECKED : BST_UNCHECKED);
 
-    EnableWindow(GetDlgItem(hDlg, IDC_BTN_START01), running ? FALSE : TRUE);
-    EnableWindow(GetDlgItem(hDlg, IDC_BTN_STOP01), running ? TRUE : FALSE);
+    EnableWindow(GetDlgItem(hDlg, _IDC_BTN_START), running ? FALSE : TRUE);
+    EnableWindow(GetDlgItem(hDlg, _IDC_BTN_STOP), running ? TRUE : FALSE);
 
     // 稼働中は編集不可にする（事故防止）
-    EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PORTIN01), running ? FALSE : TRUE);
-    EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PORTOUT01), running ? FALSE : TRUE);
-    EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PORTNAME01), running ? FALSE : TRUE);
+    EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTIN), running ? FALSE : TRUE);
+    EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTOUT), running ? FALSE : TRUE);
+    EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTNAME), running ? FALSE : TRUE);
 }
 
 std::string WideToUtf8(const std::wstring& ws)

@@ -33,8 +33,17 @@ private:
 //
 ////////////////////////////////////////
 std::wstring GetIniPath();
-void SaveSettings(HWND hDlg);
-void LoadSettings(HWND hDlg);
-void SetRunningUi(HWND hDlg, bool running);
+//void SaveSettings(HWND hDlg);
+void SaveSettings(HWND hDlg, UINT _IDC_EDIT_PORTIN, UINT _IDC_EDIT_PORTOUT, UINT _IDC_EDIT_PORTNAME);
+//void LoadSettings(HWND hDlg);
+void LoadSettings(HWND hDlg, UINT _IDC_EDIT_PORTIN, UINT _IDC_EDIT_PORTOUT, UINT _IDC_EDIT_PORTNAME);
+//void SetRunningUi(HWND hDlg, bool running);
+void SetRunningUi(HWND hDlg, bool running,
+    UINT _IDC_BTN_START,
+    UINT _IDC_BTN_STOP,
+    UINT _IDC_EDIT_PORTIN,
+    UINT _IDC_EDIT_PORTOUT,
+    UINT _IDC_EDIT_PORTNAME
+);
 std::string WideToUtf8(const std::wstring& ws);
 bool GetIntFromEdit(HWND hDlg, int id, int& outValue);
