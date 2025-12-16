@@ -117,6 +117,25 @@ void SaveSettings(
     WritePrivateProfileStringW(L"Server", L"Channel", buf, ini.c_str());
 }
 
+void SaveSettings(
+    HWND hDlg,
+	APP_SETTINGS& _GAPP
+)
+{
+    const std::wstring ini = GetIniPath();
+
+    wchar_t buf[256]{};
+	for (int i = 0; i < _GAPP.size; ++i)
+    {       
+        GetDlgItemTextW(hDlg, _GAPP.IDC_EDIT_PORTIN[i], buf, 256);
+        WritePrivateProfileStringW(_GAPP.SVNAME[i].c_str(), L"InPort", buf, ini.c_str());
+        GetDlgItemTextW(hDlg, _GAPP.IDC_EDIT_PORTOUT[i], buf, 256);
+        WritePrivateProfileStringW(_GAPP.SVNAME[i].c_str(), L"OutPort", buf, ini.c_str());
+        GetDlgItemTextW(hDlg, _GAPP.IDC_EDIT_PORTNAME[i], buf, 256);
+        WritePrivateProfileStringW(_GAPP.SVNAME[i].c_str(), L"Channel", buf, ini.c_str());
+    }
+}
+
 void LoadSettings(HWND hDlg, UINT _IDC_EDIT_PORTIN, UINT _IDC_EDIT_PORTOUT, UINT _IDC_EDIT_PORTNAME)
 {
     const std::wstring ini = GetIniPath();
@@ -137,6 +156,28 @@ void LoadSettings(HWND hDlg, UINT _IDC_EDIT_PORTIN, UINT _IDC_EDIT_PORTOUT, UINT
     SetDlgItemTextW(hDlg, _IDC_EDIT_PORTNAME, channel);
 }
 
+void LoadSettings(
+    HWND hDlg,
+    APP_SETTINGS& _GAPP
+){
+    const std::wstring ini = GetIniPath();
+
+    for (int i = 0; i < _GAPP.size; ++i)
+    {
+        int inPort = GetPrivateProfileIntW(_GAPP.SVNAME[i].c_str(), L"InPort",   _GAPP._DEF_PORTIN[i], ini.c_str());
+        int outPort = GetPrivateProfileIntW(_GAPP.SVNAME[i].c_str(), L"OutPort", _GAPP._DEF_PORTOUT[i], ini.c_str());
+        wchar_t channel[256]{};
+        GetPrivateProfileStringW(_GAPP.SVNAME[i].c_str(), L"Channel", DEFAULT_STREAMING_SUBNAME, channel, 256, ini.c_str());
+        wchar_t tmp[32]{};
+        _snwprintf_s(tmp, _TRUNCATE, L"%d", inPort);
+        SetDlgItemTextW(hDlg, _GAPP.IDC_EDIT_PORTIN[i], tmp);
+        _snwprintf_s(tmp, _TRUNCATE, L"%d", outPort);
+        SetDlgItemTextW(hDlg, _GAPP.IDC_EDIT_PORTOUT[i], tmp);
+        SetDlgItemTextW(hDlg, _GAPP.IDC_EDIT_PORTNAME[i], channel);
+    }
+}
+
+
 void SetRunningUi(HWND hDlg, bool running, 
     UINT _IDC_BTN_START,
 	UINT _IDC_BTN_STOP,
@@ -155,6 +196,23 @@ void SetRunningUi(HWND hDlg, bool running,
     EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTIN), running ? FALSE : TRUE);
     EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTOUT), running ? FALSE : TRUE);
     EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTNAME), running ? FALSE : TRUE);
+}
+void SetRunningUi(HWND hDlg, bool running,
+    APP_SETTINGS& _GAPP
+)
+{
+    // ステータスチェック（表示用：ユーザー操作させないなら Disable）
+    //CheckDlgButton(hDlg, IDC_CHK01, running ? BST_CHECKED : BST_UNCHECKED);
+
+    // 稼働中は編集不可にする（事故防止）
+    for (int i = 0; i < _GAPP.size; ++i)
+    {
+        EnableWindow(GetDlgItem(hDlg, _GAPP.IDC_BTN_START[i]), running ? FALSE : TRUE);
+        EnableWindow(GetDlgItem(hDlg, _GAPP.IDC_BTN_STOP[i]), running ? TRUE : FALSE);
+        EnableWindow(GetDlgItem(hDlg, _GAPP.IDC_EDIT_PORTIN[i]), running ? FALSE : TRUE);
+        EnableWindow(GetDlgItem(hDlg, _GAPP.IDC_EDIT_PORTOUT[i]), running ? FALSE : TRUE);
+        EnableWindow(GetDlgItem(hDlg, _GAPP.IDC_EDIT_PORTNAME[i]), running ? FALSE : TRUE);
+    }
 }
 
 std::string WideToUtf8(const std::wstring& ws)
