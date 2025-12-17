@@ -130,15 +130,15 @@ bool IDC_BTN_START(
         return true;
     }
 
-    SetRunningUi(_hDlg, true ,
+#endif
+    SetRunningUi(_hDlg, true,
         _IDC_BTN_START,
         _IDC_BTN_STOP,
         _IDC_EDIT_PORTIN,
         _IDC_EDIT_PORTOUT,
-		_IDC_EDIT_PORTNAME
+        _IDC_EDIT_PORTNAME
     );
     return true;
-#endif
 }
 bool IDC_BTN_START(
     HWND _hDlg,
