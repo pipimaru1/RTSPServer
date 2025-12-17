@@ -17,7 +17,8 @@ RtspServerController::~RtspServerController()
 // RTSPサーバーを開始
 bool RtspServerController::Start(int inPort, int outPort, const std::string& channelUtf8, HWND hwndNotify)
 {
-    if (running_.load()) return false;
+    if (running_.load()) 
+        return false;
 
     hwndNotify_ = hwndNotify;
     loop_ = nullptr;
@@ -78,6 +79,7 @@ void RtspServerController::ThreadMain(int inPort, int outPort, std::string chann
 
     // running_ は Stop() 側で最終確定します（ここでは触らない）
 }
+
 
 //////////////////////////////////////////////////////////
 

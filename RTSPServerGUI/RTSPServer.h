@@ -19,6 +19,27 @@
 #define USE_DUMMY_CLIENT
 
 //////////////////////////////////////////////////////////
+// GST設定構造体
+struct GST_RTSP_SVPARAMS
+{
+    GMainLoop* loop = nullptr;
+
+    int in_port = 0;
+    int	out_port = 0;
+    std::string channel_name;
+
+public:
+    GST_RTSP_SVPARAMS()
+    {
+    }
+
+    ~GST_RTSP_SVPARAMS()
+    {
+	}
+};
+
+
+//////////////////////////////////////////////////////////
 // メディアごとのコンテキスト
 struct MediaCtx {
     GMainLoop* loop;
@@ -42,13 +63,19 @@ static gboolean restart_pipeline_idle(gpointer data) {
 }
 
 int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
-int OpenHLSServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
+//int OpenRTSPServer(GST_RTSP_SVPARAMS& _grsv, int argc, char* argv[]);
+//int OpenRTSPServer(GST_RTSP_SVPARAMS& _grsv);
+
+//テスト用HLSサーバー
+//int OpenHLSServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
 
 //static char* port = (char*)DEFAULT_RTSP_PORT;           
 #define DEFAULT_DISABLE_RTCP FALSE
 
 //extern gboolean disable_rtcp;
 //extern gboolean disable_rtcp = DEFAULT_DISABLE_RTCP;
+
+#define GST_INTERVAL_PORTWATCH 500 // ms
 
 #ifdef _WIN32
 #include <Windows.h>

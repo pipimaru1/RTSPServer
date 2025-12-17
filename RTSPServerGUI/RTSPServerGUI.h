@@ -2,6 +2,8 @@
 
 #include "resource.h"
 
+#define MAXCH 32
+
 struct _GMainLoop;
 typedef struct _GMainLoop GMainLoop;
 
@@ -12,12 +14,16 @@ public:
     ~RtspServerController();
 
     bool Start(int inPort, int outPort, const std::string& channelUtf8, HWND hwndNotify);
+    //bool Start(GST_RTSP_SVPARAMS& _gsrv, HWND hwndNotify);
+
     void Stop();
 
     bool IsRunning() const { return running_.load(); }
 
 private:
     void ThreadMain(int inPort, int outPort, std::string channelUtf8);
+    //void ThreadMain(GST_RTSP_SVPARAMS& _gsrv, std::string channelUtf8);
+    //void ThreadMainGsrv(GST_RTSP_SVPARAMS& _gsrv);
 
 private:
     std::atomic<bool> running_{ false };
@@ -27,27 +33,8 @@ private:
 };
 
 
-/////////////////////////////////////////
-//
-// ヘルパー関数
-//
-////////////////////////////////////////
-std::wstring GetIniPath();
-//void SaveSettings(HWND hDlg);
-void SaveSettings(HWND hDlg, UINT _IDC_EDIT_PORTIN, UINT _IDC_EDIT_PORTOUT, UINT _IDC_EDIT_PORTNAME);
-//void LoadSettings(HWND hDlg);
-void LoadSettings(HWND hDlg, UINT _IDC_EDIT_PORTIN, UINT _IDC_EDIT_PORTOUT, UINT _IDC_EDIT_PORTNAME);
-//void SetRunningUi(HWND hDlg, bool running);
-void SetRunningUi(HWND hDlg, bool running,
-    UINT _IDC_BTN_START,
-    UINT _IDC_BTN_STOP,
-    UINT _IDC_EDIT_PORTIN,
-    UINT _IDC_EDIT_PORTOUT,
-    UINT _IDC_EDIT_PORTNAME
-);
 std::string WideToUtf8(const std::wstring& ws);
 bool GetIntFromEdit(HWND hDlg, int id, int& outValue);
-
 
 ///////////////////////////////////////////////
 // 
@@ -56,15 +43,15 @@ bool GetIntFromEdit(HWND hDlg, int id, int& outValue);
 ///////////////////////////////////////////////
 struct APP_SETTINGS
 {
-	int size = 32; // チャンネル数
-    std::array<std::wstring, 32> SVNAME = {
+	int size = MAXCH; // チャンネル数
+    std::array<std::wstring, MAXCH> SVNAME = {
     L"CH01",L"CH02",L"CH03",L"CH04",L"CH05",L"CH06",L"CH07",L"CH08",
     L"CH09",L"CH10",L"CH11",L"CH12",L"CH13",L"CH14",L"CH15",L"CH16",
     L"CH17",L"CH18",L"CH19",L"CH20",L"CH21",L"CH22",L"CH23",L"CH24",
     L"CH25",L"CH26",L"CH27",L"CH28",L"CH29",L"CH30",L"CH31",L"CH32"
     };
 
-    std::array<UINT, 32> IDC_EDIT_PORTIN = {
+    std::array<UINT, MAXCH> IDC_EDIT_PORTIN = {
         IDC_EDIT_PORTIN1,IDC_EDIT_PORTIN2,IDC_EDIT_PORTIN3,IDC_EDIT_PORTIN4,
         IDC_EDIT_PORTIN5,IDC_EDIT_PORTIN6,IDC_EDIT_PORTIN7,IDC_EDIT_PORTIN8,
         IDC_EDIT_PORTIN9,IDC_EDIT_PORTIN10,IDC_EDIT_PORTIN11,IDC_EDIT_PORTIN12,
@@ -75,7 +62,7 @@ struct APP_SETTINGS
         IDC_EDIT_PORTIN29,IDC_EDIT_PORTIN30,IDC_EDIT_PORTIN31,IDC_EDIT_PORTIN32
     };
 
-    std::array<UINT, 32> IDC_EDIT_PORTOUT = {
+    std::array<UINT, MAXCH> IDC_EDIT_PORTOUT = {
         IDC_EDIT_PORTOUT1,IDC_EDIT_PORTOUT2,IDC_EDIT_PORTOUT3,IDC_EDIT_PORTOUT4,
         IDC_EDIT_PORTOUT5,IDC_EDIT_PORTOUT6,IDC_EDIT_PORTOUT7,IDC_EDIT_PORTOUT8,
         IDC_EDIT_PORTOUT9,IDC_EDIT_PORTOUT10,IDC_EDIT_PORTOUT11,IDC_EDIT_PORTOUT12,
@@ -86,7 +73,7 @@ struct APP_SETTINGS
         IDC_EDIT_PORTOUT29,IDC_EDIT_PORTOUT30,IDC_EDIT_PORTOUT31,IDC_EDIT_PORTOUT32
     };
 
-    std::array<UINT, 32> IDC_EDIT_PORTNAME = {
+    std::array<UINT, MAXCH> IDC_EDIT_PORTNAME = {
         IDC_EDIT_PORTNAME1,IDC_EDIT_PORTNAME2,IDC_EDIT_PORTNAME3,IDC_EDIT_PORTNAME4,
         IDC_EDIT_PORTNAME5,IDC_EDIT_PORTNAME6,IDC_EDIT_PORTNAME7,IDC_EDIT_PORTNAME8,
         IDC_EDIT_PORTNAME9,IDC_EDIT_PORTNAME10,IDC_EDIT_PORTNAME11,IDC_EDIT_PORTNAME12,
@@ -97,7 +84,7 @@ struct APP_SETTINGS
         IDC_EDIT_PORTNAME29,IDC_EDIT_PORTNAME30,IDC_EDIT_PORTNAME31,IDC_EDIT_PORTNAME32
     };
 
-    std::array<UINT, 32> IDC_BTN_START = {
+    std::array<UINT, MAXCH> IDC_BTN_START = {
         IDC_BTN_START1,IDC_BTN_START2,IDC_BTN_START3,IDC_BTN_START4,
         IDC_BTN_START5,IDC_BTN_START6,IDC_BTN_START7,IDC_BTN_START8,
         IDC_BTN_START9,IDC_BTN_START10,IDC_BTN_START11,IDC_BTN_START12,
@@ -108,7 +95,7 @@ struct APP_SETTINGS
         IDC_BTN_START29,IDC_BTN_START30,IDC_BTN_START31,IDC_BTN_START32
 	};
 
-    std::array<UINT, 32> IDC_BTN_STOP = {
+    std::array<UINT, MAXCH> IDC_BTN_STOP = {
         IDC_BTN_STOP1,IDC_BTN_STOP2,IDC_BTN_STOP3,IDC_BTN_STOP4,
         IDC_BTN_STOP5,IDC_BTN_STOP6,IDC_BTN_STOP7,IDC_BTN_STOP8,
         IDC_BTN_STOP9,IDC_BTN_STOP10,IDC_BTN_STOP11,IDC_BTN_STOP12,
@@ -119,7 +106,7 @@ struct APP_SETTINGS
         IDC_BTN_STOP29,IDC_BTN_STOP30,IDC_BTN_STOP31,IDC_BTN_STOP32
 	};
 
-    std::array<UINT, 32> IDC_CHK = {
+    std::array<UINT, MAXCH> IDC_CHK = {
         IDC_CHK1,IDC_CHK2,IDC_CHK3,IDC_CHK4,
         IDC_CHK5,IDC_CHK6,IDC_CHK7,IDC_CHK8,
         IDC_CHK9,IDC_CHK10,IDC_CHK11,IDC_CHK12,
@@ -130,7 +117,7 @@ struct APP_SETTINGS
         IDC_CHK29,IDC_CHK30,IDC_CHK31,IDC_CHK32
 	};
 
-    std::array<UINT, 32> _DEF_PORTIN = {
+    std::array<UINT, MAXCH> _DEF_PORTIN = {
 		5004,5007,5009,5010,
         5011,5012,5013,5014,
         5015,5016,5017,5018,
@@ -140,7 +127,7 @@ struct APP_SETTINGS
         5031,5032,5033,5034,
         5035,5036,5037,5038
     };
-    std::array<UINT, 32> _DEF_PORTOUT = {
+    std::array<UINT, MAXCH> _DEF_PORTOUT = {
         8554,8555,8556,8557,
         8558,8559,8560,8561,
         8562,8563,8564,8565,
@@ -151,17 +138,39 @@ struct APP_SETTINGS
         8582,8583,8584,8585
     };
 };
+/////////////////////////////////////////
+//
+// ヘルパー関数
+//
+////////////////////////////////////////
+std::wstring GetIniPath();
+//void SaveSettings(HWND hDlg);
+void SaveSettings(HWND hDlg, UINT _IDC_EDIT_PORTIN, UINT _IDC_EDIT_PORTOUT, UINT _IDC_EDIT_PORTNAME);
+void SaveSettings(HWND hDlg,APP_SETTINGS& _GAPP);
 
-void LoadSettings(
-    HWND hDlg,
-    APP_SETTINGS& _GAPP
-);
-void SaveSettings(
-    HWND hDlg,
+void LoadSettings(HWND hDlg, UINT _IDC_EDIT_PORTIN, UINT _IDC_EDIT_PORTOUT, UINT _IDC_EDIT_PORTNAME);
+void LoadSettings(HWND hDlg,APP_SETTINGS& _GAPP);
+
+//void SetRunningUi(HWND hDlg, bool running);
+void SetRunningUi(HWND hDlg, bool running,
+    UINT _IDC_BTN_START,
+    UINT _IDC_BTN_STOP,
     UINT _IDC_EDIT_PORTIN,
     UINT _IDC_EDIT_PORTOUT,
     UINT _IDC_EDIT_PORTNAME
 );
-void SetRunningUi(HWND hDlg, bool running,
-    APP_SETTINGS& _GAPP
-);
+void SetRunningUi(HWND hDlg, bool running,APP_SETTINGS& _GAPP);
+
+//void LoadSettings(
+//    HWND hDlg,
+//    APP_SETTINGS& _GAPP
+//);
+//void SaveSettings(
+//    HWND hDlg,
+//    UINT _IDC_EDIT_PORTIN,
+//    UINT _IDC_EDIT_PORTOUT,
+//    UINT _IDC_EDIT_PORTNAME
+//);
+//void SetRunningUi(HWND hDlg, bool running,
+//    APP_SETTINGS& _GAPP
+//);

@@ -42,7 +42,8 @@ static gboolean restart_pipeline_idle(gpointer data) {
 }
 
 int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
-int OpenHLSServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
+//テスト用HLSサーバー
+//int OpenHLSServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
 
 //static char* port = (char*)DEFAULT_RTSP_PORT;           
 extern gboolean disable_rtcp;

@@ -47,19 +47,25 @@ void SetGuiNotifyHwnd(HWND hwnd)
 {
     g_gui_hwnd = hwnd;
 }
-
-void NotifyRx(bool receiving)
+////////////////////////////////////////////////////////
+// 
+// 受信状態の通知
+// _ch: チャンネル番号（0～MAXCH-1）
+//
+////////////////////////////////////////////////////////
+void NotifyRx(bool receiving, UINT _ch)
 {
     bool prev = g_rx.exchange(receiving);
     if (prev == receiving) return;
 
     if (g_gui_hwnd)
     {
-        PostMessageW(g_gui_hwnd, WM_APP_RX_STATUS, receiving ? 1 : 0, 0);
+        PostMessageW(g_gui_hwnd, WM_APP_RX_STATUS + _ch, receiving ? 1 : 0, 0);
     }
 }
-
-// ★追加：一定時間受信が無ければOFFにする監視
+//////////////////////////////////////////////////////////
+// ★追加：一定時間受信が無ければOFFにする
+///////////////////////////////////////////////////////////
 gboolean rx_watch_cb(gpointer)
 {
     if (!g_rx.load())
@@ -70,19 +76,23 @@ gboolean rx_watch_cb(gpointer)
 
     if (last != 0 && (now - last) > g_rx_timeout_us)
     {
-        NotifyRx(false);
+        NotifyRx(false, 0);
     }
     return G_SOURCE_CONTINUE;
 }
 #endif
 
+//////////////////////////////////////////////////
+// udpsrc_buffer_probe()は最後に受信した時刻を更新
+// 一定時間受信が無ければ、rx_watch_cb()がOFFにする
+///////////////////////////////////////////////////
 GstPadProbeReturn udpsrc_buffer_probe(GstPad*, GstPadProbeInfo* info, gpointer)
 {
 #ifdef _WIN32
     // ★追加：最後に受信した時刻を更新
     g_last_rx_us.store(g_get_monotonic_time()); 
     // バッファが流れた＝受信できている
-    NotifyRx(true);
+    NotifyRx(true, 0);
 #endif
     return GST_PAD_PROBE_OK;
 }
@@ -138,7 +148,7 @@ gboolean bus_watch_callback(GstBus* bus, GstMessage* msg, gpointer user_data)
             if (s && gst_structure_has_name(s, "GstUDPSrcTimeout")) {
                 g_print("UDPSRC timeout -> restart\n");
 #ifdef _WIN32
-                NotifyRx(false); // ★無信号 通知
+                NotifyRx(false, 0); // ★無信号 通知
 #endif
                 g_idle_add(restart_pipeline_idle, ctx->pipeline);
             }
@@ -154,24 +164,28 @@ gboolean bus_watch_callback(GstBus* bus, GstMessage* msg, gpointer user_data)
 #ifdef USE_DUMMY_CLIENT
 //////////////////////////////////////////////////////////
 // パイプラインの取得
-void media_configure_cb_2(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer user_data)
-{
-    // RTSP が内部生成したメディア(=パイプライン)を取得
-    GstElement* element = gst_rtsp_media_get_element(media);
-    if (!element) 
-        return;
-
-    // バスを取得
-    GstBus* bus = gst_element_get_bus(element);
-    if (bus) {
-        // bus_watch_callback() を登録してメインループで監視
-        gst_bus_add_watch(bus, bus_watch_callback, user_data);
-        gst_object_unref(bus);
-    }
-}
+//void media_configure_cb_2(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer user_data)
+//{
+//    // RTSP が内部生成したメディア(=パイプライン)を取得
+//    GstElement* element = gst_rtsp_media_get_element(media);
+//    if (!element) 
+//        return;
+//
+//    // バスを取得
+//    GstBus* bus = gst_element_get_bus(element);
+//    if (bus) {
+//        // bus_watch_callback() を登録してメインループで監視
+//        gst_bus_add_watch(bus, bus_watch_callback, user_data);
+//        gst_object_unref(bus);
+//    }
+//}
 
 //////////////////////////////////////////////////////////
 //
+// パイプラインの取得
+// さらに受信検出用の probe も付ける
+//
+//////////////////////////////////////////////////////////
 void media_configure_cb(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer user_data)
 {
     // user_data は g_signal_connect で渡した GMainLoop* として受け取る
@@ -193,6 +207,11 @@ void media_configure_cb(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoin
                 GstPad* pad = gst_element_get_static_pad(src, "src");
                 if (pad)
                 {
+                    ///////////////////////////////////////////////
+                    // probe 登録
+					// udpsrc_buffer_probe()は最後に受信した時刻を更新
+					// 一定時間受信が無ければOFFにする
+                    ///////////////////////////////////////////////
                     gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, udpsrc_buffer_probe, nullptr, nullptr);
                     gst_object_unref(pad);
                     g_object_set_data(G_OBJECT(src), "rx-probe-installed", GINT_TO_POINTER(1));
@@ -202,10 +221,16 @@ void media_configure_cb(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoin
         }
     }
 #ifdef _WIN32
+    /////////////////////////////////////////
     // 受信監視タイマ開始（まだなら開始）
+	// rx_watch_cb 内で g_rx を参照しているので
+	// 二重登録は問題ないが念のためチェック
+	///////////////////////////////////////////
     if (g_rx_watch_id == 0)
     {
-        g_rx_watch_id = g_timeout_add(500, rx_watch_cb, nullptr);
+		// Add watch timer
+        // rx_watch_cb
+		g_rx_watch_id = g_timeout_add(GST_INTERVAL_PORTWATCH, rx_watch_cb, nullptr); //GST_INTERVAL_PORTWATCH = 500ms
     }
 #endif
 
@@ -736,8 +761,19 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
     return 0;
 }
 
+
+///////////////////////////////////////////////////////////
+//
+// OpenRTSPServer 関数のオーバーロード　構造体対応版
+//
+///////////////////////////////////////////////////////////
+//int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[])
+
+
 //////////////////////////////////////////////////////////
-//HLS 対応 家じゃテストできない
+// HLS 対応 家じゃテストできない
+// テスト
+// OpenRTSPServerに組み込んだ
 //////////////////////////////////////////////////////////
 int OpenHLSServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[])
 {
