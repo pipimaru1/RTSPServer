@@ -43,15 +43,31 @@ const gint64 g_rx_timeout_us = 5 * G_USEC_PER_SEC;
 // ★追加：監視タイマID（1ch想定）
 guint g_rx_watch_id = 0;
 
+
+////////////////////////////////////////////////////////
+//
+// GUI（ダイアログ）の HWND を RTSPServerCore 側に教える関数
+// 
+// OpenRTSPServer() や probe / bus watch は 別スレッドや GMainLoop の文脈で動きます
+// そこから GUI のチェックボックスを直接触るのは危険（Win32 の UI は基本 GUI スレッド専用）
+// なので「あとで Windows メッセージで GUI スレッドに通知する」方式にしている
+// そのために、GUI起動時に SetGuiNotifyHwnd(hDlg) を1回呼ぶ
+// Core 側は g_gui_hwnd に覚える
+// 以後 NotifyRx() が PostMessage() でその HWND に通知できる
+// …という“通知先登録”が SetGuiNotifyHwnd です。
+// 
+////////////////////////////////////////////////////////
 void SetGuiNotifyHwnd(HWND hwnd)
 {
     g_gui_hwnd = hwnd;
 }
+
 ////////////////////////////////////////////////////////
 // 
 // 受信状態の通知
 // _ch: チャンネル番号（0～MAXCH-1）
-//
+// 受信状態（受信中 / 受信なし）を GUI に通知する関数
+// 
 ////////////////////////////////////////////////////////
 void NotifyRx(bool receiving, UINT _ch)
 {
@@ -63,6 +79,7 @@ void NotifyRx(bool receiving, UINT _ch)
         PostMessageW(g_gui_hwnd, WM_APP_RX_STATUS + _ch, receiving ? 1 : 0, 0);
     }
 }
+
 //////////////////////////////////////////////////////////
 // ★追加：一定時間受信が無ければOFFにする
 ///////////////////////////////////////////////////////////
@@ -95,6 +112,18 @@ GstPadProbeReturn udpsrc_buffer_probe(GstPad*, GstPadProbeInfo* info, gpointer)
     NotifyRx(true, 0);
 #endif
     return GST_PAD_PROBE_OK;
+}
+
+
+// 非同期で安全にリスタート（メインループスレッドで実行）
+gboolean restart_pipeline_idle(gpointer data) {
+    GstElement* p = GST_ELEMENT(data);
+    g_print("[auto-restart] restarting pipeline...\n");
+    gst_element_set_state(p, GST_STATE_READY);
+    gst_element_get_state(p, nullptr, nullptr, GST_CLOCK_TIME_NONE);
+    gst_element_set_state(p, GST_STATE_PLAYING);
+    g_print("[auto-restart] done.\n");
+    return FALSE; // 一回だけ
 }
 
 //////////////////////////////////////////////////////////
@@ -140,6 +169,7 @@ gboolean bus_watch_callback(GstBus* bus, GstMessage* msg, gpointer user_data)
 //
 // パイプラインの取得
 // さらに受信検出用の probe も付ける
+// コールバック
 //
 //////////////////////////////////////////////////////////
 void media_configure_cb(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer user_data)
@@ -213,6 +243,7 @@ void media_configure_cb(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoin
 
 //////////////////////////////////////////////////////////
 // 1回キックして数秒で切断するダミークライアント
+/*
 void KickRtspOnceAndDisconnect(GMainLoop* loop, int out_port, const std::string& channel, int timer) 
 {
     std::ostringstream p;
@@ -244,9 +275,11 @@ void KickRtspOnceAndDisconnect(GMainLoop* loop, int out_port, const std::string&
         return FALSE; // 1回だけ
         }, pipe);
 }
+*/
 
 //////////////////////////////////////////////////////////
 //ダミーRTSPクライアントの起動
+/*
 void StartDummyRtspClient_old(GMainLoop* loop, int out_port, const std::string& channel) {
     std::ostringstream p;
     p << "playbin uri=rtsp://127.0.0.1:" << out_port << "/" << channel
@@ -259,6 +292,7 @@ void StartDummyRtspClient_old(GMainLoop* loop, int out_port, const std::string& 
     gst_object_unref(bus);
     gst_element_set_state(pipe, GST_STATE_PLAYING);
 }
+*/
 
 //////////////////////////////////////////////////////////
 //ダミーRTSPクライアントの起動

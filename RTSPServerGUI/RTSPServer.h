@@ -38,6 +38,53 @@
 //	}
 //};
 
+//////////////////////////////////////////////////////////
+// 
+// OpenRTSPServer()
+//   　　┃
+//   コールバック登録
+//   media_configure_cb()
+//　　   ┣━━━━━━━━━━━━━━┓
+//   タイマとして登録     　   Pad Probe コールバック
+// 　受信有無に関係ない            イベントコール
+// 　  rx_watch_cb()　　        udpsrc_buffer_probe()
+//   　  ┃                            ┃
+//   ファンクションコール        ファンクションコール 
+// 　NotifyRx(false, ch)       　NotifyRx(true, ch)
+//     　┃                            ┃
+//  PostMessageWでflase通知     PostMessageWでtrue通知
+// 
+//////////////////////////////////////////////////////////
+
+/* -----------------------------------------------------------
+ 呼び出し関係図
+
+ OpenRTSPServer()
+ ┃
+ ┣ media_configure_cb() コールバック登録
+ ┃ ┃
+ ┃ ┣ rx_watch_cb() タイマ登録
+ ┃ ┃ ┃
+ ┃ ┃ ┗ NotifyRx(false, ch) ファンクションコール
+ ┃ ┃     ┃
+ ┃ ┃     ┗PostMessageW() false通知
+ ┃ ┃
+ ┃ ┣ udpsrc_buffer_probe() Pad Probe コールバック バッファ通過イベントで発火
+ ┃ ┃ ┃
+ ┃ ┃ ┗ NotifyRx(true, ch) ファンクションコール
+ ┃ ┃     ┃
+ ┃ ┃     ┗PostMessageW() true通知
+ ┃ ┃
+ ┃ ┣ bus_watch_callback( ) コールバック登録 MediaCtx* ctx を渡されている
+ ┃ ┃ ┃
+ ┃ ┃ ┣ restart_pipeline_idle( ) タイマ登録 MediaCtx*のctx->pipeline を 渡されている。
+ ┃ ┃ ┃
+ ┃ ┃ ┗ NotifyRx(true, ch) ファンクションコール
+ ┃ ┃     ┃
+ ┃ ┃     ┗PostMessageW() false通知
+
+-------------------------------------------------------------- */  
+
 
 //////////////////////////////////////////////////////////
 // メディアごとのコンテキスト
@@ -52,29 +99,20 @@ struct ServerCtx {
 };
 
 // 非同期で安全にリスタート（メインループスレッドで実行）
-static gboolean restart_pipeline_idle(gpointer data) {
-    GstElement* p = GST_ELEMENT(data);
-    g_print("[auto-restart] restarting pipeline...\n");
-    gst_element_set_state(p, GST_STATE_READY);
-    gst_element_get_state(p, nullptr, nullptr, GST_CLOCK_TIME_NONE);
-    gst_element_set_state(p, GST_STATE_PLAYING);
-    g_print("[auto-restart] done.\n");
-    return FALSE; // 一回だけ
-}
+static gboolean restart_pipeline_idle(gpointer data);
+//{
+//    GstElement* p = GST_ELEMENT(data);
+//    g_print("[auto-restart] restarting pipeline...\n");
+//    gst_element_set_state(p, GST_STATE_READY);
+//    gst_element_get_state(p, nullptr, nullptr, GST_CLOCK_TIME_NONE);
+//    gst_element_set_state(p, GST_STATE_PLAYING);
+//    g_print("[auto-restart] done.\n");
+//    return FALSE; // 一回だけ
+//}
 
 int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
-//int OpenRTSPServer(GST_RTSP_SVPARAMS& _grsv, int argc, char* argv[]);
-//int OpenRTSPServer(GST_RTSP_SVPARAMS& _grsv);
 
-//テスト用HLSサーバー
-//int OpenHLSServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
-
-//static char* port = (char*)DEFAULT_RTSP_PORT;           
 #define DEFAULT_DISABLE_RTCP FALSE
-
-//extern gboolean disable_rtcp;
-//extern gboolean disable_rtcp = DEFAULT_DISABLE_RTCP;
-
 #define GST_INTERVAL_PORTWATCH 500 // ms
 
 #ifdef _WIN32
