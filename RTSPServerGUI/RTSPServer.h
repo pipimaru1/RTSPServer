@@ -18,25 +18,25 @@
 
 #define USE_DUMMY_CLIENT
 
-//////////////////////////////////////////////////////////
-// GSTê›íËç\ë¢ëÃ
-struct GST_RTSP_SVPARAMS
-{
-    GMainLoop* loop = nullptr;
-
-    int in_port = 0;
-    int	out_port = 0;
-    std::string channel_name;
-
-public:
-    GST_RTSP_SVPARAMS()
-    {
-    }
-
-    ~GST_RTSP_SVPARAMS()
-    {
-	}
-};
+////////////////////////////////////////////////////////////
+//// GSTê›íËç\ë¢ëÃ
+//struct GST_RTSP_SVPARAMS
+//{
+//    GMainLoop* loop = nullptr;
+//
+//    int in_port = 0;
+//    int	out_port = 0;
+//    std::string channel_name;
+//
+//public:
+//    GST_RTSP_SVPARAMS()
+//    {
+//    }
+//
+//    ~GST_RTSP_SVPARAMS()
+//    {
+//	}
+//};
 
 
 //////////////////////////////////////////////////////////

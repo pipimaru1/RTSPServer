@@ -96,30 +96,6 @@ GstPadProbeReturn udpsrc_buffer_probe(GstPad*, GstPadProbeInfo* info, gpointer)
 #endif
     return GST_PAD_PROBE_OK;
 }
-//////////////////////////////////////////////////////////
-//異常があった時のコールバック関数
-gboolean bus_watch_callback_old(GstBus* bus, GstMessage* msg, gpointer user_data)
-{
-    switch (GST_MESSAGE_TYPE(msg))
-    {
-        case GST_MESSAGE_ERROR:
-        {
-            GError* err = NULL;
-            gchar* debug = NULL;
-            gst_message_parse_error(msg, &err, &debug);
-            g_printerr("Error: %s\n", err->message);
-            g_error_free(err);
-            g_free(debug);
-            break;
-        }
-        case GST_MESSAGE_EOS:
-            g_print("End of stream\n");
-            break;
-        default:
-            break;
-    }
-    return TRUE;
-}
 
 //////////////////////////////////////////////////////////
 //異常があった時のコールバック関数
@@ -159,26 +135,6 @@ gboolean bus_watch_callback(GstBus* bus, GstMessage* msg, gpointer user_data)
     }
     return TRUE;
 }
-
-
-#ifdef USE_DUMMY_CLIENT
-//////////////////////////////////////////////////////////
-// パイプラインの取得
-//void media_configure_cb_2(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer user_data)
-//{
-//    // RTSP が内部生成したメディア(=パイプライン)を取得
-//    GstElement* element = gst_rtsp_media_get_element(media);
-//    if (!element) 
-//        return;
-//
-//    // バスを取得
-//    GstBus* bus = gst_element_get_bus(element);
-//    if (bus) {
-//        // bus_watch_callback() を登録してメインループで監視
-//        gst_bus_add_watch(bus, bus_watch_callback, user_data);
-//        gst_object_unref(bus);
-//    }
-//}
 
 //////////////////////////////////////////////////////////
 //
@@ -254,54 +210,6 @@ void media_configure_cb(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoin
         });
 }
 
-#else
-//////////////////////////////////////////////////////////
-// パイプラインの取得
-void media_configure_cb_1(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer user_data)
-{
-    GstElement* element = gst_rtsp_media_get_element(media);
-    if (!element) return;
-
-    // コンテキストを作る
-    MediaCtx* ctx = g_new0(MediaCtx, 1);
-    ctx->loop = (GMainLoop*)user_data; // 既存の引数（loop）
-    ctx->pipeline = element;
-
-    // バスに登録（user_data に ctx を渡す）
-    GstBus* bus = gst_element_get_bus(element);
-    gst_bus_add_watch(bus, bus_watch_callback, ctx);
-    gst_object_unref(bus);
-
-    // media が破棄されたら ctx も破棄
-    g_object_set_data_full(G_OBJECT(media), "media-ctx", ctx, (GDestroyNotify)g_free);
-}
-
-//////////////////////////////////////////////////////////
-// パイプラインの取得
-void media_configure_cb(GstRTSPMediaFactory* factory,
-    GstRTSPMedia* media,
-    gpointer user_data)
-{
-    ServerCtx* sctx = static_cast<ServerCtx*>(user_data);
-
-    GstElement* element = gst_rtsp_media_get_element(media);
-    if (!element) return;
-
-    // bus_watch_callback は MediaCtx* を受ける設計なら、ここで MediaCtx を作って渡す
-    MediaCtx* mctx = g_new0(MediaCtx, 1);
-    mctx->loop = sctx->loop;
-    mctx->pipeline = element; // 必要なら gst_object_ref(element) しておく
-
-    if (GstBus* bus = gst_element_get_bus(element)) {
-        gst_bus_add_watch(bus, bus_watch_callback, mctx);
-        gst_object_unref(bus);
-    }
-    gst_object_unref(element);
-
-    // media 破棄時に mctx も解放
-    g_object_set_data_full(G_OBJECT(media), "media-ctx", mctx, (GDestroyNotify)g_free);
-}
-#endif
 
 //////////////////////////////////////////////////////////
 // 1回キックして数秒で切断するダミークライアント
@@ -642,6 +550,7 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
             {NULL}
         };
 
+        //ここのコードがないとチェックボックスのオンオフ働かない
         optctx = g_option_context_new("<launch line> - Test RTSP Server, Launch\n\n"
             "Example: \"( videotestsrc ! x264enc ! rtph264pay name=pay0 pt=96 )\"");
         g_option_context_add_main_entries(optctx, entries, NULL);
@@ -663,7 +572,6 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
         mounts = gst_rtsp_server_get_mount_points(server);
 
 
-#ifdef USE_DUMMY_CLIENT
         // factory 設定
         factory = gst_rtsp_media_factory_new();
         gst_rtsp_media_factory_set_launch(factory, str_pipeline.str().c_str());
@@ -688,46 +596,6 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
         StartManagedDummy(out_port, channel_name);
         //機能しないような気がする
         //KickRtspOnceAndDisconnect(loop, out_port, channel_name, 20);
-
-#else //USE_DUMMY_CLIENT
-
-        factory = gst_rtsp_media_factory_new();
-        gst_rtsp_media_factory_set_launch(factory, str_pipeline.str().c_str());
-        gst_rtsp_media_factory_set_shared(factory, TRUE);
-        gst_rtsp_media_factory_set_enable_rtcp(factory, !disable_rtcp); //HLS
-        gst_rtsp_media_factory_set_suspend_mode(factory, GST_RTSP_SUSPEND_MODE_NONE); // ★常に
-
-        // ★ ServerCtx を用意して media-configure に渡す
-        ServerCtx* sctx = g_new0(ServerCtx, 1);
-        sctx->loop = loop;   // 後で loop 代入するので一旦空でも可
-        sctx->server = nullptr; // 後で server を入れる
-        g_signal_connect(factory, "media-configure", G_CALLBACK(media_configure_cb), sctx);
-
-        // ADD Factory
-        gst_rtsp_mount_points_add_factory(mounts, sstr_channel.str().c_str(), factory);
-        g_object_unref(mounts);
-
-        // サーバ attach
-        gst_rtsp_server_attach(server, NULL);
-
-        // ★ ここで sctx を完成させる（loop/server を入れる）
-        sctx->loop = loop;   // この時点で loop は g_main_loop_new() 済み
-        sctx->server = server;
-
-        // ★ ダミー接続は使わない
-        // StartDummyRtspClient(loop, out_port, channel_name);
-
-        // ★ パターンC：ダミー無しでメディア起動
-        //static GstRTSPMedia* g_prewarmed_media = nullptr;
-        //g_prewarmed_media = prewarm_media_without_client(
-        //    factory, server, out_port, channel_name, loop);
-        //if (!g_prewarmed_media) {
-        //    g_printerr("prewarm failed; HLS may need an initial client.\n");
-        //}
-
-        //HLS
-        gst_rtsp_media_factory_set_enable_rtcp(factory, !disable_rtcp);
-#endif
         /* start serving */
         //std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
 
@@ -757,127 +625,6 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
         }
     }
 
-    g_main_loop_run(loop);
-    return 0;
-}
-
-
-///////////////////////////////////////////////////////////
-//
-// OpenRTSPServer 関数のオーバーロード　構造体対応版
-//
-///////////////////////////////////////////////////////////
-//int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[])
-
-
-//////////////////////////////////////////////////////////
-// HLS 対応 家じゃテストできない
-// テスト
-// OpenRTSPServerに組み込んだ
-//////////////////////////////////////////////////////////
-int OpenHLSServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[])
-{
-    //   GMainLoop* loop;
-    GstRTSPServer* server;
-    GstRTSPMountPoints* mounts;
-    GstRTSPMediaFactory* factory;
-    GOptionContext* optctx;
-    GError* error = NULL;
-
-    std::ostringstream str_GOptionEntry_01;
-    str_GOptionEntry_01 << "Port to listen on (default: " << out_port << ")";
-
-    std::string str_outport = std::to_string(out_port);
-    const size_t buffer_size = 32;                          // バッファのサイズ
-    static char tmp_port[buffer_size];                      // 書き込み可能なバッファ
-    //strncpy(tmp_port, str_outport.c_str(), buffer_size - 1);
-    strcpy_s(tmp_port, buffer_size, str_outport.c_str());//値コピー
-
-    std::ostringstream str_pipeline;
-    std::ostringstream sstr_channel;
-
-    //str_pipeline << "( udpsrc port=" << in_port << " caps=\"application/x-rtp,media=video,encoding-name=H264,payload=96\" ! rtph264depay ! h264parse ! rtph264pay name=pay0 pt=96 )";
-    str_pipeline << "( udpsrc port=" << in_port << " caps=\"application/x-rtp,media=video,encoding-name=H264,payload=96\" ! rtph264depay ! h264parse ! mpegtsmux ! hlssink \
-                        location=/path/to/hls/segment%05d.ts \
-                        playlist-location=/path/to/hls/playlist.m3u8 \
-                        target-duration=2 \
-                        max-files=5 )";
-    sstr_channel << "/" << channel_name;
-
-    static GOptionEntry entries[] = {
-        {"port",         'p',  0, G_OPTION_ARG_STRING, &(tmp_port),  str_GOptionEntry_01.str().c_str(),               "PORT"},
-        {"disable-rtcp", '\0', 0, G_OPTION_ARG_NONE,   &disable_rtcp,"Whether RTCP should be disabled (default false)", NULL},
-        {NULL}
-    };
-
-    optctx = g_option_context_new("<launch line> - Test RTSP Server, Launch\n\n"
-        "Example: \"( videotestsrc ! x264enc ! rtph264pay name=pay0 pt=96 )\"");
-    g_option_context_add_main_entries(optctx, entries, NULL);
-    g_option_context_add_group(optctx, gst_init_get_option_group());
-
-    if (!g_option_context_parse(optctx, &argc, &argv, &error)) {
-        g_printerr("Error parsing options: %s\n", error->message);
-        g_option_context_free(optctx);
-        g_clear_error(&error);
-        return -1;
-    }
-    g_option_context_free(optctx);
-
-    loop = g_main_loop_new(NULL, FALSE);
-
-    /* create a server instance */
-    server = gst_rtsp_server_new();
-
-    //g_object_set(server, "service", port, NULL);
-    g_object_set(server, "service", str_outport.c_str(), NULL);
-
-    /* get the mount points for this server, every server has a default object
-        * that be used to map uri mount points to media factories */
-    mounts = gst_rtsp_server_get_mount_points(server);
-
-    /* make a media factory for a test stream. The default media factory can use
-        * gst-launch syntax to create pipelines.
-        * any launch line works as long as it contains elements named pay%d. Each
-        * element with pay%d names will be a stream */
-    factory = gst_rtsp_media_factory_new();
-    gst_rtsp_media_factory_set_launch(factory, str_pipeline.str().c_str());
-
-    // シグナルを接続
-    g_signal_connect(factory, "media-configure",
-        G_CALLBACK(media_configure_cb),
-        loop /* ユーザーデータ */);
-
-    gst_rtsp_media_factory_set_shared(factory, TRUE);
-    gst_rtsp_media_factory_set_enable_rtcp(factory, !disable_rtcp);
-
-    /* attach the test factory to the /test url */
-    gst_rtsp_mount_points_add_factory(mounts, sstr_channel.str().c_str(), factory);
-
-    /* don't need the ref to the mapper anymore */
-    g_object_unref(mounts);
-
-    /* attach the server to the default maincontext */
-    gst_rtsp_server_attach(server, NULL);
-
-    /* start serving */
-    //std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
-
-    // IPアドレス一覧を取得
-    std::vector<std::string> ipList = getLocalIPAddresses();
-    std::cout << "-------------------------------------" << std::endl;
-    std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
-
-    // 結果の表示
-    if (ipList.empty()) {
-        std::cout << "Can not find other ip address." << std::endl;
-        //std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
-    }
-    else {
-        //std::cout << "取得したIPアドレス一覧:" << std::endl;
-        for (const auto& ip : ipList) {
-            std::cout << "Stream Ready at rtsp://" << ip << ":" << str_outport << sstr_channel.str() << std::endl;
-        }
-    }
     g_main_loop_run(loop);
     return 0;
 }

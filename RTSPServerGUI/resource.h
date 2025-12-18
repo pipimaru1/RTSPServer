@@ -13,12 +13,231 @@
 #define IDC_RTSPSERVERGUI               109
 #define IDR_MAINFRAME                   128
 #define IDD_MAIN                        129
+
+#define IDC_BTN_START1                  1101
+#define IDC_BTN_START2                  1102
+#define IDC_BTN_START3                  1103
+#define IDC_BTN_START4                  1104
+#define IDC_BTN_START5                  1105
+#define IDC_BTN_START6                  1106
+#define IDC_BTN_START7                  1107
+#define IDC_BTN_START8                  1108
+#define IDC_BTN_START9                  1109
+#define IDC_BTN_START10                 1110
+#define IDC_BTN_START11                 1111
+#define IDC_BTN_START12                 1112
+#define IDC_BTN_START13                 1113
+#define IDC_BTN_START14                 1114
+#define IDC_BTN_START15                 1115
+#define IDC_BTN_START16                 1116
+#define IDC_BTN_START17                 1117
+#define IDC_BTN_START18                 1118
+#define IDC_BTN_START19                 1119
+#define IDC_BTN_START20                 1120
+#define IDC_BTN_START21                 1121
+#define IDC_BTN_START22                 1122
+#define IDC_BTN_START23                 1123
+#define IDC_BTN_START24                 1124
+#define IDC_BTN_START25                 1125
+#define IDC_BTN_START26                 1126
+#define IDC_BTN_START27                 1127
+#define IDC_BTN_START28                 1128
+#define IDC_BTN_START29                 1129
+#define IDC_BTN_START30                 1130
+#define IDC_BTN_START31                 1131
+#define IDC_BTN_START32                 1132
+
+// IDC_BTN_STOP ボタンのIDは 1201 ～ 1232 
+#define IDC_BTN_STOP1                   1201
+#define IDC_BTN_STOP2                   1202
+#define IDC_BTN_STOP3                   1203
+#define IDC_BTN_STOP4                   1204
+#define IDC_BTN_STOP5                   1205
+#define IDC_BTN_STOP6                   1206
+#define IDC_BTN_STOP7                   1207
+#define IDC_BTN_STOP8                   1208
+#define IDC_BTN_STOP9                   1209
+#define IDC_BTN_STOP10                  1210
+#define IDC_BTN_STOP11                  1211
+#define IDC_BTN_STOP12                  1212
+#define IDC_BTN_STOP13                  1213
+#define IDC_BTN_STOP14                  1214
+#define IDC_BTN_STOP15                  1215
+#define IDC_BTN_STOP16                  1216
+#define IDC_BTN_STOP17                  1217
+#define IDC_BTN_STOP18                  1218
+#define IDC_BTN_STOP19                  1219
+#define IDC_BTN_STOP20                  1220
+#define IDC_BTN_STOP21                  1221
+#define IDC_BTN_STOP22                  1222
+#define IDC_BTN_STOP23                  1223
+#define IDC_BTN_STOP24                  1224
+#define IDC_BTN_STOP25                  1225
+#define IDC_BTN_STOP26                  1226
+#define IDC_BTN_STOP27                  1227
+#define IDC_BTN_STOP28                  1228
+#define IDC_BTN_STOP29                  1229
+#define IDC_BTN_STOP30                  1230
+#define IDC_BTN_STOP31                  1231
+#define IDC_BTN_STOP32                  1232
+
+// IDC_EDIT_PORTIN ボックスのIDは 1301 ～ 1322
+#define IDC_EDIT_PORTIN1                1301
+#define IDC_EDIT_PORTIN2                1302
+#define IDC_EDIT_PORTIN3                1303
+#define IDC_EDIT_PORTIN4                1304
+#define IDC_EDIT_PORTIN5                1305
+#define IDC_EDIT_PORTIN6                1306
+#define IDC_EDIT_PORTIN7                1307
+#define IDC_EDIT_PORTIN8                1308
+#define IDC_EDIT_PORTIN9                1309
+#define IDC_EDIT_PORTIN10               1310
+#define IDC_EDIT_PORTIN11               1311
+#define IDC_EDIT_PORTIN12               1312
+#define IDC_EDIT_PORTIN13               1313
+#define IDC_EDIT_PORTIN14               1314
+#define IDC_EDIT_PORTIN15               1315
+#define IDC_EDIT_PORTIN16               1316
+#define IDC_EDIT_PORTIN17               1317
+#define IDC_EDIT_PORTIN18               1318
+#define IDC_EDIT_PORTIN19               1319
+#define IDC_EDIT_PORTIN20               1320
+#define IDC_EDIT_PORTIN21               1321
+#define IDC_EDIT_PORTIN22               1322
+#define IDC_EDIT_PORTIN23               1323
+#define IDC_EDIT_PORTIN24               1324
+#define IDC_EDIT_PORTIN25               1325
+#define IDC_EDIT_PORTIN26               1326
+#define IDC_EDIT_PORTIN27               1327
+#define IDC_EDIT_PORTIN28               1328
+#define IDC_EDIT_PORTIN29               1329
+#define IDC_EDIT_PORTIN30               1330
+#define IDC_EDIT_PORTIN31               1331
+#define IDC_EDIT_PORTIN32               1332
+
+// IDC_EDIT_PORTOUT ボックスのIDは 1401 ～ 1422
+#define IDC_EDIT_PORTOUT1               1401
+#define IDC_EDIT_PORTOUT2               1402
+#define IDC_EDIT_PORTOUT3               1403
+#define IDC_EDIT_PORTOUT4               1404
+#define IDC_EDIT_PORTOUT5               1405
+#define IDC_EDIT_PORTOUT6               1406
+#define IDC_EDIT_PORTOUT7               1407
+#define IDC_EDIT_PORTOUT8               1408
+#define IDC_EDIT_PORTOUT9               1409
+#define IDC_EDIT_PORTOUT10              1410
+#define IDC_EDIT_PORTOUT11              1411
+#define IDC_EDIT_PORTOUT12              1412
+#define IDC_EDIT_PORTOUT13              1413
+#define IDC_EDIT_PORTOUT14              1414
+#define IDC_EDIT_PORTOUT15              1415
+#define IDC_EDIT_PORTOUT16              1416
+#define IDC_EDIT_PORTOUT17              1417
+#define IDC_EDIT_PORTOUT18              1418
+#define IDC_EDIT_PORTOUT19              1419
+#define IDC_EDIT_PORTOUT20              1420
+#define IDC_EDIT_PORTOUT21              1421
+#define IDC_EDIT_PORTOUT22              1422
+#define IDC_EDIT_PORTOUT23              1423
+#define IDC_EDIT_PORTOUT24              1424
+#define IDC_EDIT_PORTOUT25              1425
+#define IDC_EDIT_PORTOUT26              1426
+#define IDC_EDIT_PORTOUT27              1427
+#define IDC_EDIT_PORTOUT28              1428
+#define IDC_EDIT_PORTOUT29              1429
+#define IDC_EDIT_PORTOUT30              1430
+#define IDC_EDIT_PORTOUT31              1431
+#define IDC_EDIT_PORTOUT32              1432
+
+
+#define IDC_CHK1                        1501
+#define IDC_CHK2                        1502
+#define IDC_CHK3                        1503
+#define IDC_CHK4                        1504
+#define IDC_CHK5                        1505
+#define IDC_CHK6                        1506
+#define IDC_CHK7                        1507
+#define IDC_CHK8                        1508
+#define IDC_CHK9                        1509
+#define IDC_CHK10                       1510
+#define IDC_CHK11                       1511
+#define IDC_CHK12                       1512
+#define IDC_CHK13                       1513
+#define IDC_CHK14                       1514
+#define IDC_CHK15                       1515
+#define IDC_CHK16                       1516
+#define IDC_CHK17                       1517
+#define IDC_CHK18                       1518
+#define IDC_CHK19                       1519
+#define IDC_CHK20                       1520
+#define IDC_CHK21                       1521
+#define IDC_CHK22                       1522
+#define IDC_CHK23                       1523
+#define IDC_CHK24                       1524
+#define IDC_CHK25                       1525
+#define IDC_CHK26                       1526
+#define IDC_CHK27                       1527
+#define IDC_CHK28                       1528
+#define IDC_CHK29                       1529
+#define IDC_CHK30                       1530
+#define IDC_CHK31                       1531
+#define IDC_CHK32                       1532
+
+#define IDC_EDIT_PORTNAME1              1601
+#define IDC_EDIT_PORTNAME2              1602
+#define IDC_EDIT_PORTNAME3              1603
+#define IDC_EDIT_PORTNAME4              1604
+#define IDC_EDIT_PORTNAME5              1605
+#define IDC_EDIT_PORTNAME6              1606
+#define IDC_EDIT_PORTNAME7              1607
+#define IDC_EDIT_PORTNAME8              1608
+#define IDC_EDIT_PORTNAME9              1609
+#define IDC_EDIT_PORTNAME10             1610
+#define IDC_EDIT_PORTNAME11             1611
+#define IDC_EDIT_PORTNAME12             1612
+#define IDC_EDIT_PORTNAME13             1613
+#define IDC_EDIT_PORTNAME14             1614
+#define IDC_EDIT_PORTNAME15             1615
+#define IDC_EDIT_PORTNAME16             1616
+#define IDC_EDIT_PORTNAME17             1617
+#define IDC_EDIT_PORTNAME18             1618
+#define IDC_EDIT_PORTNAME19             1619
+#define IDC_EDIT_PORTNAME20             1620
+#define IDC_EDIT_PORTNAME21             1621
+#define IDC_EDIT_PORTNAME22             1622
+#define IDC_EDIT_PORTNAME23             1623
+#define IDC_EDIT_PORTNAME24             1624
+#define IDC_EDIT_PORTNAME25             1625
+#define IDC_EDIT_PORTNAME26             1626
+#define IDC_EDIT_PORTNAME27             1627
+#define IDC_EDIT_PORTNAME28             1628
+#define IDC_EDIT_PORTNAME29             1629
+#define IDC_EDIT_PORTNAME30             1630
+#define IDC_EDIT_PORTNAME31             1631
+#define IDC_EDIT_PORTNAME32             1632
+
+
+
+/*
 #define IDC_BTN_START1                  1000
+#define IDC_BTN_START2                  1018
+
 #define IDC_BTN_STOP1                   1001
+#define IDC_BTN_STOP2                   1019
+
 #define IDC_EDIT_PORTIN1                1002
+#define IDC_EDIT_PORTIN2                1020
+
 #define IDC_EDIT_PORTOUT1               1003
-#define IDC_EDIT_PORTNAME1              1004
+#define IDC_EDIT_PORTOUT2               1021
+
 #define IDC_CHK1                        1005
+#define IDC_CHK2                        1023
+
+#define IDC_EDIT_PORTNAME1              1004
+#define IDC_EDIT_PORTNAME2              1022
+
+
 #define IDC_BTN_START3                  1006
 #define IDC_BTN_STOP3                   1007
 #define IDC_EDIT_PORTIN3                1008
@@ -31,12 +250,6 @@
 #define IDC_EDIT_PORTOUT5               1015
 #define IDC_EDIT_PORTNAME5              1016
 #define IDC_CHK5                        1017
-#define IDC_BTN_START2                  1018
-#define IDC_BTN_STOP2                   1019
-#define IDC_EDIT_PORTIN2                1020
-#define IDC_EDIT_PORTOUT2               1021
-#define IDC_EDIT_PORTNAME2              1022
-#define IDC_CHK2                        1023
 #define IDC_BTN_START4                  1024
 #define IDC_BTN_STOP4                   1025
 #define IDC_EDIT_PORTIN4                1026
@@ -205,6 +418,7 @@
 #define IDC_EDIT_PORTOUT32              1189
 #define IDC_EDIT_PORTNAME32             1190
 #define IDC_CHK32                       1191
+*/
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

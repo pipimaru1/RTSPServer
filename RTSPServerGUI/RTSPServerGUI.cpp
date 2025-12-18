@@ -221,6 +221,16 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         case WM_COMMAND:
         {
             const int id = LOWORD(wParam);
+            const WORD code = HIWORD(wParam);
+
+            // 中継状態表示用チェック チェックボックス操作を無視する
+            if (code == BN_CLICKED && (id >= IDC_CHK1 && id <= IDC_CHK32)) {
+                // いまの状態を元に戻す（ユーザー操作を無かったことに）
+                const BOOL checked = (IsDlgButtonChecked(hDlg, id) == BST_CHECKED);
+                CheckDlgButton(hDlg, id, checked ? BST_UNCHECKED : BST_CHECKED);
+                return TRUE; // ここで食う
+            }
+			//break; breakしない
 
             switch (id)
             {
