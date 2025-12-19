@@ -83,7 +83,7 @@ void NotifyRx(bool receiving, UINT _ch)
 //////////////////////////////////////////////////////////
 // ★追加：一定時間受信が無ければOFFにする
 ///////////////////////////////////////////////////////////
-gboolean rx_watch_cb(gpointer)
+gboolean CALLBK_RxWatch(gpointer)
 {
     if (!g_rx.load())
         return G_SOURCE_CONTINUE; // 既にOFFなら何もしない
@@ -100,10 +100,10 @@ gboolean rx_watch_cb(gpointer)
 #endif
 
 //////////////////////////////////////////////////
-// udpsrc_buffer_probe()は最後に受信した時刻を更新
-// 一定時間受信が無ければ、rx_watch_cb()がOFFにする
+// PROBE_UdpSrcBuffer()は最後に受信した時刻を更新
+// 一定時間受信が無ければ、CALLBK_RxWatch()がOFFにする
 ///////////////////////////////////////////////////
-GstPadProbeReturn udpsrc_buffer_probe(GstPad*, GstPadProbeInfo* info, gpointer)
+GstPadProbeReturn PROBE_UdpSrcBuffer(GstPad*, GstPadProbeInfo* info, gpointer)
 {
 #ifdef _WIN32
     // ★追加：最後に受信した時刻を更新
@@ -114,9 +114,8 @@ GstPadProbeReturn udpsrc_buffer_probe(GstPad*, GstPadProbeInfo* info, gpointer)
     return GST_PAD_PROBE_OK;
 }
 
-
 // 非同期で安全にリスタート（メインループスレッドで実行）
-gboolean restart_pipeline_idle(gpointer data) {
+gboolean CALLBK_RstPipeline(gpointer data) {
     GstElement* p = GST_ELEMENT(data);
     g_print("[auto-restart] restarting pipeline...\n");
     gst_element_set_state(p, GST_STATE_READY);
@@ -128,7 +127,7 @@ gboolean restart_pipeline_idle(gpointer data) {
 
 //////////////////////////////////////////////////////////
 //異常があった時のコールバック関数
-gboolean bus_watch_callback(GstBus* bus, GstMessage* msg, gpointer user_data)
+gboolean CALLBK_BusWatch(GstBus* bus, GstMessage* msg, gpointer user_data)
 {
     MediaCtx* ctx = static_cast<MediaCtx*>(user_data);
 
@@ -139,12 +138,12 @@ gboolean bus_watch_callback(GstBus* bus, GstMessage* msg, gpointer user_data)
             g_printerr("Error: %s\n", err->message);
             g_error_free(err); g_free(dbg);
             // エラーでもリスタート
-            g_idle_add(restart_pipeline_idle, ctx->pipeline);
+            g_idle_add(CALLBK_RstPipeline, ctx->pipeline);
             break;
         }
         case GST_MESSAGE_EOS:
             g_print("End of stream -> restart\n");
-            g_idle_add(restart_pipeline_idle, ctx->pipeline);
+            g_idle_add(CALLBK_RstPipeline, ctx->pipeline);
             break;
 
         case GST_MESSAGE_ELEMENT: {
@@ -155,7 +154,7 @@ gboolean bus_watch_callback(GstBus* bus, GstMessage* msg, gpointer user_data)
 #ifdef _WIN32
                 NotifyRx(false, 0); // ★無信号 通知
 #endif
-                g_idle_add(restart_pipeline_idle, ctx->pipeline);
+                g_idle_add(CALLBK_RstPipeline, ctx->pipeline);
             }
             break;
         }
@@ -172,7 +171,9 @@ gboolean bus_watch_callback(GstBus* bus, GstMessage* msg, gpointer user_data)
 // コールバック
 //
 //////////////////////////////////////////////////////////
-void media_configure_cb(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer user_data)
+// user_dataは GMainLoop*でキャストしているので、勝手に拡張できない
+//void media_configure_cb(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer user_data)
+void CALLBK_MediaCfg(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer user_data)
 {
     // user_data は g_signal_connect で渡した GMainLoop* として受け取る
     GMainLoop* loop = static_cast<GMainLoop*>(user_data);
@@ -195,10 +196,10 @@ void media_configure_cb(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoin
                 {
                     ///////////////////////////////////////////////
                     // probe 登録
-					// udpsrc_buffer_probe()は最後に受信した時刻を更新
+					// PROBE_UdpSrcBuffer()は最後に受信した時刻を更新
 					// 一定時間受信が無ければOFFにする
                     ///////////////////////////////////////////////
-                    gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, udpsrc_buffer_probe, nullptr, nullptr);
+                    gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, PROBE_UdpSrcBuffer, nullptr, nullptr);
                     gst_object_unref(pad);
                     g_object_set_data(G_OBJECT(src), "rx-probe-installed", GINT_TO_POINTER(1));
                 }
@@ -209,24 +210,24 @@ void media_configure_cb(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoin
 #ifdef _WIN32
     /////////////////////////////////////////
     // 受信監視タイマ開始（まだなら開始）
-	// rx_watch_cb 内で g_rx を参照しているので
+	// CALLBK_RxWatch 内で g_rx を参照しているので
 	// 二重登録は問題ないが念のためチェック
 	///////////////////////////////////////////
     if (g_rx_watch_id == 0)
     {
 		// Add watch timer
-        // rx_watch_cb
-		g_rx_watch_id = g_timeout_add(GST_INTERVAL_PORTWATCH, rx_watch_cb, nullptr); //GST_INTERVAL_PORTWATCH = 500ms
+        // CALLBK_RxWatch
+		g_rx_watch_id = g_timeout_add(GST_INTERVAL_PORTWATCH, CALLBK_RxWatch, nullptr); //GST_INTERVAL_PORTWATCH = 500ms
     }
 #endif
 
-    // bus_watch_callback が期待する MediaCtx* をここで作る
+    // CALLBK_BusWatch が期待する MediaCtx* をここで作る
     MediaCtx* ctx = g_new0(MediaCtx, 1);
     ctx->loop = loop;
     ctx->pipeline = GST_ELEMENT(gst_object_ref(element)); // パイプライン参照を保持
 
     if (GstBus* bus = gst_element_get_bus(element)) {
-        gst_bus_add_watch(bus, bus_watch_callback, ctx);  // ← MediaCtx* を渡す
+        gst_bus_add_watch(bus, CALLBK_BusWatch, ctx);  // ← MediaCtx* を渡す
         gst_object_unref(bus);
     }
     gst_object_unref(element);
@@ -260,7 +261,7 @@ void KickRtspOnceAndDisconnect(GMainLoop* loop, int out_port, const std::string&
 
     // 状態遷移・エラー監視（任意）
     GstBus* bus = gst_element_get_bus(pipe);
-    gst_bus_add_watch(bus, bus_watch_callback, loop);
+    gst_bus_add_watch(bus, CALLBK_BusWatch, loop);
     gst_object_unref(bus);
 
     gst_element_set_state(pipe, GST_STATE_PLAYING);
@@ -288,7 +289,7 @@ void StartDummyRtspClient_old(GMainLoop* loop, int out_port, const std::string& 
     GstElement* pipe = gst_parse_launch(p.str().c_str(), &err);
     if (!pipe) { g_printerr("kick client parse error: %s\n", err ? err->message : "unknown"); if (err) g_error_free(err); return; }
     GstBus* bus = gst_element_get_bus(pipe);
-    gst_bus_add_watch(bus, bus_watch_callback, loop);
+    gst_bus_add_watch(bus, CALLBK_BusWatch, loop);
     gst_object_unref(bus);
     gst_element_set_state(pipe, GST_STATE_PLAYING);
 }
@@ -459,7 +460,7 @@ GstRTSPMedia* prewarm_media_without_client(GstRTSPMediaFactory* factory,
     //if (GstElement* element = gst_rtsp_media_get_element(media)) {
     //    gst_element_set_state(element, GST_STATE_PLAYING);
     //    if (GstBus* bus = gst_element_get_bus(element)) {
-    //        gst_bus_add_watch(bus, bus_watch_callback, loop);
+    //        gst_bus_add_watch(bus, CALLBK_BusWatch, loop);
     //        gst_object_unref(bus);
     //    }
     //    gst_object_unref(element);
@@ -473,7 +474,7 @@ GstRTSPMedia* prewarm_media_without_client(GstRTSPMediaFactory* factory,
             mctx->loop = loop;
             mctx->pipeline = GST_ELEMENT(gst_object_ref(element)); // パイプライン参照を保持
 
-            gst_bus_add_watch(bus, bus_watch_callback, mctx);
+            gst_bus_add_watch(bus, CALLBK_BusWatch, mctx);
             gst_object_unref(bus);
 
             // media 破棄時に mctx も解放（pipeline も unref）
@@ -523,16 +524,16 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
         std::ostringstream str_pipeline;
         std::ostringstream sstr_channel;
 
-        if (0)
-        {
-            str_pipeline
-                << "( udpsrc port=" << in_port
-                << " caps=\"application/x-rtp,media=video,encoding-name=H264,payload=96\" "
-                << "! rtph264depay ! h264parse "
-                << "! rtph264pay name=pay0 pt=96 )";
-        }
-        else
-        {
+        //if (0)
+        //{
+        //    str_pipeline
+        //        << "( udpsrc port=" << in_port
+        //        << " caps=\"application/x-rtp,media=video,encoding-name=H264,payload=96\" "
+        //        << "! rtph264depay ! h264parse "
+        //        << "! rtph264pay name=pay0 pt=96 )";
+        //}
+        //else
+        //{
             str_pipeline.str("");
             str_pipeline
                 //<< "( udpsrc port=" << in_port            //2025/12/16
@@ -574,7 +575,7 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
             std::cerr << "str_pipeline : " << str_pipeline.str() << std::endl;
 #endif
             hls_on = true;
-        }
+//        }
 
         sstr_channel << "/" << channel_name;
 
@@ -615,7 +616,7 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
 
         // シグナルを接続
         g_signal_connect(factory, "media-configure",
-            G_CALLBACK(media_configure_cb),
+            G_CALLBACK(CALLBK_MediaCfg),
             loop /* ユーザーデータ */);
 
 		// ADD Factory
@@ -626,19 +627,12 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
         gst_rtsp_server_attach(server, NULL);
 
         //ダミーRTSPクライアントの起動
-        //StartDummyRtspClient(loop, out_port, channel_name);
         StartManagedDummy(out_port, channel_name);
-        //機能しないような気がする
-        //KickRtspOnceAndDisconnect(loop, out_port, channel_name, 20);
-        /* start serving */
-        //std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
 
         // IPアドレス一覧を取得
         std::vector<std::string> ipList = getLocalIPAddresses();
 
         std::cout << "-------------------------------------" << std::endl;
-        //std::cout << __FILE__ << " " << __func__ << std::endl;
-        //std::cout << __func__ <<" BUILD:["<< __DATE__ << " " << __TIME__<<"]" << std::endl;
         std::cout << "Stream Ready at rtsp://127.0.0.1:" << str_outport << sstr_channel.str() << std::endl;
 
         // 結果の表示

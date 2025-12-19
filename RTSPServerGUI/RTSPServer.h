@@ -18,72 +18,25 @@
 
 #define USE_DUMMY_CLIENT
 
-////////////////////////////////////////////////////////////
-//// GST設定構造体
-//struct GST_RTSP_SVPARAMS
-//{
-//    GMainLoop* loop = nullptr;
-//
-//    int in_port = 0;
-//    int	out_port = 0;
-//    std::string channel_name;
-//
-//public:
-//    GST_RTSP_SVPARAMS()
-//    {
-//    }
-//
-//    ~GST_RTSP_SVPARAMS()
-//    {
-//	}
-//};
-
-//////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 
-// OpenRTSPServer()
+//  OpenRTSPServer()
 //   　　┃
 //   コールバック登録
-//   media_configure_cb()
-//　　   ┣━━━━━━━━━━━━━━┓
-//   タイマとして登録     　   Pad Probe コールバック
-// 　受信有無に関係ない            イベントコール
-// 　  rx_watch_cb()　　        udpsrc_buffer_probe()
-//   　  ┃                            ┃
-//   ファンクションコール        ファンクションコール 
-// 　NotifyRx(false, ch)       　NotifyRx(true, ch)
-//     　┃                            ┃
-//  PostMessageWでflase通知     PostMessageWでtrue通知
+// RTSP MediaFactoryシグナル監視   
+// CALLBK_MediaCfg()
+//　　   ┣━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
+//   タイマとして登録     　   　         Pad Probe コールバック          コールバック登録 
+//  最終受信からの経過時間チェック　　　 バッファ通過イベント              bus メッセージ監視
+// 　  CALLBK_RxWatch()　　               PROBE_UdpSrcBuffer()             CALLBK_BusWatch()
+//   　  ┃                                      ┃                              ┣━━━━━━━━━━━━┓ 
+//   ファンクションコール                  ファンクションコール             コールバック            ファンクションコール  
+// 　メインGUIに通知　  　　　　　　　　　 メインGUIに通知　　　　　　　パイプラインをリスタート   メインGUIに通知　  　　
+// 　NotifyRx(false, ch)                 　NotifyRx(true, ch)           CALLBK_RstPipeline()       NotifyRx(false, ch)   
+//     　┃                                      ┃                 　                               　    ┃                
+//  PostMessageWでflase通知               PostMessageWでtrue通知                                  PostMessageWでtrue通知
 // 
-//////////////////////////////////////////////////////////
-
-/* -----------------------------------------------------------
- 呼び出し関係図
-
- OpenRTSPServer()
- ┃
- ┣ media_configure_cb() コールバック登録
- ┃ ┃
- ┃ ┣ rx_watch_cb() タイマ登録
- ┃ ┃ ┃
- ┃ ┃ ┗ NotifyRx(false, ch) ファンクションコール
- ┃ ┃     ┃
- ┃ ┃     ┗PostMessageW() false通知
- ┃ ┃
- ┃ ┣ udpsrc_buffer_probe() Pad Probe コールバック バッファ通過イベントで発火
- ┃ ┃ ┃
- ┃ ┃ ┗ NotifyRx(true, ch) ファンクションコール
- ┃ ┃     ┃
- ┃ ┃     ┗PostMessageW() true通知
- ┃ ┃
- ┃ ┣ bus_watch_callback( ) コールバック登録 MediaCtx* ctx を渡されている
- ┃ ┃ ┃
- ┃ ┃ ┣ restart_pipeline_idle( ) タイマ登録 MediaCtx*のctx->pipeline を 渡されている。
- ┃ ┃ ┃
- ┃ ┃ ┗ NotifyRx(true, ch) ファンクションコール
- ┃ ┃     ┃
- ┃ ┃     ┗PostMessageW() false通知
-
--------------------------------------------------------------- */  
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 //////////////////////////////////////////////////////////
@@ -92,23 +45,14 @@ struct MediaCtx {
     GMainLoop* loop;
     GstElement* pipeline; // gst_rtsp_media_get_element() の返り値
 };
+// 2025年12月19日
+// media_configure_cb()で生成　コールバック CALLBK_BusWatch()に渡る
+// prewarm_media_without_client()で生成 コールバック CALLBK_BusWatch()に渡る
 
-struct ServerCtx {
-    GMainLoop* loop;
-    GstRTSPServer* server;
-};
+
 
 // 非同期で安全にリスタート（メインループスレッドで実行）
-static gboolean restart_pipeline_idle(gpointer data);
-//{
-//    GstElement* p = GST_ELEMENT(data);
-//    g_print("[auto-restart] restarting pipeline...\n");
-//    gst_element_set_state(p, GST_STATE_READY);
-//    gst_element_get_state(p, nullptr, nullptr, GST_CLOCK_TIME_NONE);
-//    gst_element_set_state(p, GST_STATE_PLAYING);
-//    g_print("[auto-restart] done.\n");
-//    return FALSE; // 一回だけ
-//}
+static gboolean CALLBK_RstPipeline(gpointer data);
 
 int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
 
@@ -120,3 +64,20 @@ int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& cha
 constexpr UINT WM_APP_RX_STATUS = WM_APP + 102; // wParam: 1=受信中, 0=無信号
 void SetGuiNotifyHwnd(HWND hwnd);
 #endif
+
+class RTSPController
+{
+public:
+ //   int in_port = 0;
+ //   int	out_port = 0;
+	//std::string channel_name; //"default"など
+	//int ch = 0; // 0始まりのチャンネル番号
+
+ //   std::atomic<gint64> g_last_rx_us{ 0 };              // ★追加：最後に受信した時刻（μs）
+ //   const gint64 g_rx_timeout_us = 5 * G_USEC_PER_SEC;  // ★追加：受信が途切れたとみなす時間（udpsrc timeout と同じ 5秒推奨）
+ //   guint g_rx_watch_id = 0;                            // ★追加：監視タイマID（1ch想定）
+
+	
+	void CALLBK_MediaCfg(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer user_data);
+
+};
