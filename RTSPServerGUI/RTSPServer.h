@@ -74,6 +74,18 @@ public:
 	std::atomic<gint64> g_last_rx_us{ 0 };              // ★追加：最後に受信した時刻（μs）
 	//   const gint64 g_rx_timeout_us = 5 * G_USEC_PER_SEC;  // ★追加：受信が途切れたとみなす時間（udpsrc timeout と同じ 5秒推奨）
 	guint g_rx_watch_id = 0;                            // ★追加：監視タイマID（1ch想定）
+	
+	// ビットレート計算用
+	std::atomic<uint64_t> rx_bytes_accum{ 0 }; // 足し込み用
+	std::atomic<gint64>   br_last_us{ 0 };     // ビットレート計算の基準時刻
+	std::atomic<uint32_t> br_kbps{ 0 };        // 表示用（任意）
+	
+	// 送信元IP情報保管用
+	std::mutex src_mtx;
+	std::string src_ip;     // UTF-8
+	uint16_t    src_port = 0;
+
+
 };
 
 // 非同期で安全にリスタート（メインループスレッドで実行）

@@ -16,6 +16,8 @@
 #include <gst/gst.h>
 #include <gst/rtsp-server/rtsp-server.h>
 #include <gst/rtsp/gstrtspurl.h>  // gst_rtsp_url_parse
+#include <gst/net/gstnetaddressmeta.h>
+#include <gio/gio.h>
 
 #include "RTSPServer.h"
 
@@ -23,6 +25,13 @@
 #pragma comment(lib, "gstrtsp-1.0.lib")      // または "libgstrtsp-1.0.lib"
 #pragma comment(lib, "gstrtspserver-1.0.lib") // すでに入っていれば不要
 
+//#pragma comment(lib, "gio-2.0.lib")
+#pragma comment(lib, "gobject-2.0.lib")
+#pragma comment(lib, "glib-2.0.lib")
+
+//#pragma comment(lib, "gstnet-1.0.lib")      // または "libgstrtsp-1.0.lib"
+//#pragma comment(lib, "gio-1.0.lib")      // または "libgstrtsp-1.0.lib"
+    
 gboolean disable_rtcp;// = DEFAULT_DISABLE_RTCP;
 
 
@@ -44,7 +53,7 @@ std::atomic<bool> g_rx{ false };
 std::atomic<gint64> g_last_rx_us{ 0 };
 
 // ★追加：受信が途切れたとみなす時間（udpsrc timeout と同じ 5秒推奨）
-const gint64 g_rx_timeout_us = 5 * G_USEC_PER_SEC;
+const gint64 g_rx_timeout_us = 1 * G_USEC_PER_SEC; // 5秒
 
 // ★追加：監視タイマID（1ch想定）
 guint g_rx_watch_id = 0;
@@ -151,9 +160,34 @@ gboolean CALLBK_RxWatchEx(gpointer user_data)
         if (!_rctrl->g_rx.load())
             return G_SOURCE_CONTINUE; // 既にOFFなら何もしない
 
-
         const gint64 now = g_get_monotonic_time();
         const gint64 last = _rctrl->g_last_rx_us.load();
+
+        // ★追加：ビットレート計算（1秒に1回だけ）
+        gint64 prev = _rctrl->br_last_us.load(std::memory_order_relaxed);
+        if (prev == 0)
+        {
+            _rctrl->br_last_us.store(now, std::memory_order_relaxed);
+            _rctrl->rx_bytes_accum.exchange(0, std::memory_order_relaxed); // 最初は捨てる
+            //return G_SOURCE_CONTINUE;
+        }
+        else
+        {
+            const gint64 dt_us = now - prev;
+            _rctrl->br_last_us.store(now, std::memory_order_relaxed);
+
+            const uint64_t bytes = _rctrl->rx_bytes_accum.exchange(0, std::memory_order_relaxed);
+
+            // bps = bytes * 8 / sec
+            const double sec = (double)dt_us / 1e6;
+            const uint64_t bps = (uint64_t)((double)bytes * 8.0 / sec);
+            const uint32_t kbps = (uint32_t)(bps / 1000);
+
+            _rctrl->br_kbps.store(kbps, std::memory_order_relaxed);
+
+            NotifyRxEx(true, _rctrl);
+
+        }
 
         if (last != 0 && (now - last) > g_rx_timeout_us)
         {
@@ -208,10 +242,38 @@ GstPadProbeReturn PROBE_UdpSrcBufferEx(GstPad*, GstPadProbeInfo* info, gpointer 
         // ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
         // マルチチャンネル化の時に配列化すること
         _rctrl->g_last_rx_us.store(g_get_monotonic_time());
+
+        // ビットレート追加
+        // ★受信時刻（既存の受信ON判定に使っているならそのまま）
+        //_rctrl->g_last_rx_us.store(g_get_monotonic_time(), std::memory_order_relaxed);
+        GstBuffer* buf = gst_pad_probe_info_get_buffer(info);
+        if (!buf) 
+            return GST_PAD_PROBE_OK;
+        // ★追加：バイト数を足し込む（これだけ）
+        _rctrl->rx_bytes_accum.fetch_add((uint64_t)gst_buffer_get_size(buf), std::memory_order_relaxed);
+
+        // ★送信元IP/port を取得して RTSPCtrl に保存
+        if (auto* meta = gst_buffer_get_net_address_meta(buf)) // :contentReference[oaicite:3]{index=3}
+        {
+            if (meta->addr && G_IS_INET_SOCKET_ADDRESS(meta->addr))
+            {
+                auto* isa = G_INET_SOCKET_ADDRESS(meta->addr);
+                GInetAddress* ia = g_inet_socket_address_get_address(isa);
+                gchar* ip = g_inet_address_to_string(ia);
+                guint16 port = g_inet_socket_address_get_port(isa);
+                if (ip)
+                {
+                    std::lock_guard<std::mutex> lk(_rctrl->src_mtx);
+                    _rctrl->src_ip = ip;     // UTF-8
+                    _rctrl->src_port = (uint16_t)port;
+                    g_free(ip);
+                }
+            }
+        }
+
         // バッファが流れた＝受信できている
         NotifyRxEx(true, _rctrl);
 #endif
-
     }
     return GST_PAD_PROBE_OK;
 }
@@ -364,9 +426,10 @@ void CALLBK_MediaCfg(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer
     {
 		// Add watch timer
         // CALLBK_RxWatch
-		g_rx_watch_id = g_timeout_add(GST_INTERVAL_PORTWATCH, 
-            CALLBK_RxWatch,     //通常版
-            nullptr);           //GST_INTERVAL_PORTWATCH = 500ms
+		g_rx_watch_id = g_timeout_add(
+            GST_INTERVAL_PORTWATCH, //GST_INTERVAL_PORTWATCH = 500ms 
+            CALLBK_RxWatch,         //通常版
+            nullptr);           
     }
 #endif
 
@@ -420,6 +483,9 @@ void CALLBK_MediaCfgEx(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoint
         GstElement* src = gst_bin_get_by_name(GST_BIN(element), "src0");
         if (src)
         {
+            // ★追加：送信元アドレスを GstBuffer のメタに載せる
+            g_object_set(G_OBJECT(src), "retrieve-sender-address", TRUE, NULL); // :contentReference[oaicite:2]{index=2}
+
             // 二重登録防止（src に印を付ける）
             if (!g_object_get_data(G_OBJECT(src), "rx-probe-installed"))
             {
@@ -453,12 +519,12 @@ void CALLBK_MediaCfgEx(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoint
     {
         ///////////////////////////////////////////
         // Add watch timer
-        // CALLBK_RxWatch
+        // CALLBK_RxWatchEx
         ///////////////////////////////////////////
         _rctrl->g_rx_watch_id = g_timeout_add(
-            GST_INTERVAL_PORTWATCH, 
+            GST_INTERVAL_PORTWATCH, //GST_INTERVAL_PORTWATCH = 500ms
             CALLBK_RxWatchEx, 
-            _rctrl); //GST_INTERVAL_PORTWATCH = 500ms
+            _rctrl); 
     }
 #endif
 
@@ -737,6 +803,7 @@ int OpenRTSPServer(PTMLOOP& loop, int in_port, int out_port, std::string& channe
                 << "t. ! queue max-size-buffers=1 max-size-bytes=0 max-size-time=0 leaky=downstream "
                 << "! h264parse config-interval=1 "
                 << "! rtph264pay name=pay0 pt=96 "
+                << "! h264parse name=parse0 config-interval=1 " //ビットレート
                 // ---- HLS 枝
                 << "t. ! queue "
                 << "! h264parse config-interval=1 "

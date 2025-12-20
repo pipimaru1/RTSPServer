@@ -201,15 +201,55 @@ void BTN_STOP(
 	);
 }
 
+inline std::wstring string2wstring(const std::string& s)
+{
+    //int requiredSize = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, NULL, 0);
+
+    int requiredSize = MultiByteToWideChar(CP_ACP, 0, s.c_str(), -1, NULL, 0);
+    std::wstring result(requiredSize - 1, 0);
+    MultiByteToWideChar(CP_ACP, 0, s.c_str(), -1, &result[0], requiredSize);
+
+    //MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, &result[0], requiredSize);
+
+    return result;
+}
 
 void WM_APPRXSTATUS(
     HWND _hDlg,
     WPARAM wParam,
     APP_SETTINGS& _GAPP,
-	UINT _IDC_CHK
+	UINT _IDC_CHK,
+    UINT _IDC_SRCIP,
+    UINT _IDC_STC,
+	int _ch
 ){
     const bool receiving = (wParam != 0);
     CheckDlgButton(_hDlg, _IDC_CHK, receiving ? BST_CHECKED : BST_UNCHECKED);
+
+	//gGstSv[_ch].rCtrl.br_kbps IDC_BITRATE_1に表示
+    int _bitrate = gGstSv[_ch].rCtrl.br_kbps;
+	wchar_t buf[64]{};
+	_snwprintf_s(buf, _TRUNCATE, L"%d kbps", _bitrate);
+	SetDlgItemTextW(_hDlg, IDC_BITRATE_1 + _ch, buf);
+
+    // sender ip:port 表示
+    std::string ip;
+    uint16_t port = 0;
+    {
+        std::lock_guard<std::mutex> lk(gGstSv[_ch].rCtrl.src_mtx);
+        ip = gGstSv[_ch].rCtrl.src_ip;
+        port = gGstSv[_ch].rCtrl.src_port;
+    }
+
+    if (!ip.empty() && port != 0)
+    {
+		std::wstring wip = string2wstring(ip);
+        wchar_t sbuf[128]{};
+        _snwprintf_s(sbuf, _TRUNCATE, L"%s:%u", wip.c_str(), (unsigned)port);
+
+        SetDlgItemTextW(_hDlg, _IDC_SRCIP, sbuf);
+    }
+
 }
 
 INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -247,38 +287,38 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             return (INT_PTR)TRUE;
         }break;
 */
-        case WM_APP_RX_STATUS + 0:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK1);}  break;
-        case WM_APP_RX_STATUS + 1:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK2);}  break;
-        case WM_APP_RX_STATUS + 2:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK3);}  break;
-		case WM_APP_RX_STATUS + 3:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK4);}  break;
-		case WM_APP_RX_STATUS + 4:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK5);}  break;
-		case WM_APP_RX_STATUS + 5:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK6);}  break;
-		case WM_APP_RX_STATUS + 6:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK7);}  break;
-		case WM_APP_RX_STATUS + 7:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK8);}  break;
-		case WM_APP_RX_STATUS + 8:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK9);}  break;
-		case WM_APP_RX_STATUS + 9:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK10);} break;
-		case WM_APP_RX_STATUS + 10: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK11);} break;
-		case WM_APP_RX_STATUS + 11: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK12);} break;
-		case WM_APP_RX_STATUS + 12: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK13);} break;
-		case WM_APP_RX_STATUS + 13: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK14);} break;
-		case WM_APP_RX_STATUS + 14: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK15);} break;
-		case WM_APP_RX_STATUS + 15: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK16);} break;
-		case WM_APP_RX_STATUS + 16: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK17);} break;
-		case WM_APP_RX_STATUS + 17: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK18);} break;
-		case WM_APP_RX_STATUS + 18: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK19);} break;
-		case WM_APP_RX_STATUS + 19: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK20);} break;
-		case WM_APP_RX_STATUS + 20: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK21);} break;
-		case WM_APP_RX_STATUS + 21: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK22);} break;
-		case WM_APP_RX_STATUS + 22: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK23);} break;
-		case WM_APP_RX_STATUS + 23: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK24);} break;
-		case WM_APP_RX_STATUS + 24: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK25);} break;
-		case WM_APP_RX_STATUS + 25: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK26);} break;
-        case WM_APP_RX_STATUS + 26: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK27);} break;
-        case WM_APP_RX_STATUS + 27: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK28);} break;
-        case WM_APP_RX_STATUS + 28: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK29);} break;
-        case WM_APP_RX_STATUS + 29: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK30);} break;
-        case WM_APP_RX_STATUS + 30: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK31);} break;
-        case WM_APP_RX_STATUS + 31: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK32);} break;
+        case WM_APP_RX_STATUS + 0: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK1, IDC_SRCIP_1, IDC_BITRATE_1, 0); }  break;
+		case WM_APP_RX_STATUS + 1: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK2, IDC_SRCIP_2, IDC_BITRATE_2, 1); }  break;
+		case WM_APP_RX_STATUS + 2: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK3, IDC_SRCIP_3, IDC_BITRATE_3, 2); }  break;
+		case WM_APP_RX_STATUS + 3: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK4, IDC_SRCIP_4, IDC_BITRATE_4, 3); }  break;
+		case WM_APP_RX_STATUS + 4: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK5, IDC_SRCIP_5, IDC_BITRATE_5, 4); }  break;
+		case WM_APP_RX_STATUS + 5: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK6, IDC_SRCIP_6, IDC_BITRATE_6, 5); }  break;
+		case WM_APP_RX_STATUS + 6: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK7, IDC_SRCIP_7, IDC_BITRATE_7, 6); }  break;
+		case WM_APP_RX_STATUS + 7: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK8, IDC_SRCIP_8, IDC_BITRATE_8, 7); }  break;
+        case WM_APP_RX_STATUS + 8: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK9, IDC_SRCIP_9, IDC_BITRATE_9, 8); }  break;
+		case WM_APP_RX_STATUS + 9: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK10, IDC_SRCIP_10, IDC_BITRATE_10, 9); }  break;
+		case WM_APP_RX_STATUS + 10: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK11, IDC_SRCIP_11, IDC_BITRATE_11, 10); }  break;
+		case WM_APP_RX_STATUS + 11: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK12, IDC_SRCIP_12, IDC_BITRATE_12, 11); }  break;
+		case WM_APP_RX_STATUS + 12: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK13, IDC_SRCIP_13, IDC_BITRATE_13, 12); }  break;
+		case WM_APP_RX_STATUS + 13: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK14, IDC_SRCIP_14, IDC_BITRATE_14, 13); }  break;
+		case WM_APP_RX_STATUS + 14: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK15, IDC_SRCIP_15, IDC_BITRATE_15, 14); }  break;
+		case WM_APP_RX_STATUS + 15: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK16, IDC_SRCIP_16, IDC_BITRATE_16, 15); }  break;
+		case WM_APP_RX_STATUS + 16: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK17, IDC_SRCIP_17, IDC_BITRATE_17, 16); }  break;
+		case WM_APP_RX_STATUS + 17: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK18, IDC_SRCIP_18, IDC_BITRATE_18, 17); }  break;
+		case WM_APP_RX_STATUS + 18: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK19, IDC_SRCIP_19, IDC_BITRATE_19, 18); }  break;
+		case WM_APP_RX_STATUS + 19: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK20, IDC_SRCIP_20, IDC_BITRATE_20, 19); }  break;
+		case WM_APP_RX_STATUS + 20: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK21, IDC_SRCIP_21, IDC_BITRATE_21, 20); }  break;
+		case WM_APP_RX_STATUS + 21: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK22, IDC_SRCIP_22, IDC_BITRATE_22, 21); }  break;
+		case WM_APP_RX_STATUS + 22: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK23, IDC_SRCIP_23, IDC_BITRATE_23, 22); }  break;
+		case WM_APP_RX_STATUS + 23: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK24, IDC_SRCIP_24, IDC_BITRATE_24, 23); }  break;
+		case WM_APP_RX_STATUS + 24: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK25, IDC_SRCIP_25, IDC_BITRATE_25, 24); }  break;
+		case WM_APP_RX_STATUS + 25: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK26, IDC_SRCIP_26, IDC_BITRATE_26, 25); }  break;
+		case WM_APP_RX_STATUS + 26: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK27, IDC_SRCIP_27, IDC_BITRATE_27, 26); }  break;
+		case WM_APP_RX_STATUS + 27: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK28, IDC_SRCIP_28, IDC_BITRATE_28, 27); }  break;
+		case WM_APP_RX_STATUS + 28: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK29, IDC_SRCIP_29, IDC_BITRATE_29, 28); }  break;
+		case WM_APP_RX_STATUS + 29: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK30, IDC_SRCIP_30, IDC_BITRATE_30, 29); }  break;
+		case WM_APP_RX_STATUS + 30: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK31, IDC_SRCIP_31, IDC_BITRATE_31, 30); }  break;
+		case WM_APP_RX_STATUS + 31: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK32, IDC_SRCIP_32, IDC_BITRATE_32, 31); }  break;
 
         case WM_COMMAND:
         {
@@ -362,6 +402,28 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				case IDC_BTN_STOP31: { BTN_STOP(hDlg, GAPP, 30); return (INT_PTR)TRUE; }break;
 				case IDC_BTN_STOP32: { BTN_STOP(hDlg, GAPP, 31); return (INT_PTR)TRUE; }break;
 
+                case IDC_BTN_START_ALL:
+                {
+                    // 全チャンネル開始
+                    for (UINT ch = 0; ch < GAPP.size; ++ch) {
+                        if (gGstSv.size() > 0) {
+                            if (!gGstSv[ch].IsRunning()) {
+                                IDC_BTN_START(hDlg, GAPP, ch);
+                            }
+                        }
+                    }
+				}break;
+                case IDC_BTN_STOP_ALL:
+                {
+                    // 全チャンネル停止
+                    for (UINT ch = 0; ch < GAPP.size; ++ch) {
+                        if (gGstSv.size() > 0) {
+                            if (gGstSv[ch].IsRunning()) {
+                                BTN_STOP(hDlg, GAPP, ch);
+                            }
+                        }
+                    }
+				}break;
 
                 case IDOK:
                 case IDCANCEL:
