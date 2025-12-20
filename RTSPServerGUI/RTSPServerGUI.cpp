@@ -202,6 +202,16 @@ void BTN_STOP(
 }
 
 
+void WM_APPRXSTATUS(
+    HWND _hDlg,
+    WPARAM wParam,
+    APP_SETTINGS& _GAPP,
+	UINT _IDC_CHK
+){
+    const bool receiving = (wParam != 0);
+    CheckDlgButton(_hDlg, _IDC_CHK, receiving ? BST_CHECKED : BST_UNCHECKED);
+}
+
 INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
@@ -216,7 +226,7 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             //SetWindowTextW(hDlg, szTitle);
             return (INT_PTR)TRUE;
         }break;
-
+/*
         case WM_APP_RX_STATUS:
         {
             const bool receiving = (wParam != 0);
@@ -227,8 +237,48 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         {
             const bool receiving = (wParam != 0);
             CheckDlgButton(hDlg, IDC_CHK2, receiving ? BST_CHECKED : BST_UNCHECKED);
+
+            //同じ意味
+            //if( wParam) {
+            //    CheckDlgButton(hDlg, IDC_CHK2, BST_CHECKED);
+            //}else {
+            //    CheckDlgButton(hDlg, IDC_CHK2, BST_UNCHECKED);
+            //}
             return (INT_PTR)TRUE;
-        }
+        }break;
+*/
+        case WM_APP_RX_STATUS + 0:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK1);}  break;
+        case WM_APP_RX_STATUS + 1:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK2);}  break;
+        case WM_APP_RX_STATUS + 2:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK3);}  break;
+		case WM_APP_RX_STATUS + 3:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK4);}  break;
+		case WM_APP_RX_STATUS + 4:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK5);}  break;
+		case WM_APP_RX_STATUS + 5:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK6);}  break;
+		case WM_APP_RX_STATUS + 6:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK7);}  break;
+		case WM_APP_RX_STATUS + 7:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK8);}  break;
+		case WM_APP_RX_STATUS + 8:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK9);}  break;
+		case WM_APP_RX_STATUS + 9:  { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK10);} break;
+		case WM_APP_RX_STATUS + 10: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK11);} break;
+		case WM_APP_RX_STATUS + 11: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK12);} break;
+		case WM_APP_RX_STATUS + 12: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK13);} break;
+		case WM_APP_RX_STATUS + 13: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK14);} break;
+		case WM_APP_RX_STATUS + 14: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK15);} break;
+		case WM_APP_RX_STATUS + 15: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK16);} break;
+		case WM_APP_RX_STATUS + 16: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK17);} break;
+		case WM_APP_RX_STATUS + 17: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK18);} break;
+		case WM_APP_RX_STATUS + 18: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK19);} break;
+		case WM_APP_RX_STATUS + 19: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK20);} break;
+		case WM_APP_RX_STATUS + 20: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK21);} break;
+		case WM_APP_RX_STATUS + 21: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK22);} break;
+		case WM_APP_RX_STATUS + 22: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK23);} break;
+		case WM_APP_RX_STATUS + 23: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK24);} break;
+		case WM_APP_RX_STATUS + 24: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK25);} break;
+		case WM_APP_RX_STATUS + 25: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK26);} break;
+        case WM_APP_RX_STATUS + 26: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK27);} break;
+        case WM_APP_RX_STATUS + 27: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK28);} break;
+        case WM_APP_RX_STATUS + 28: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK29);} break;
+        case WM_APP_RX_STATUS + 29: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK30);} break;
+        case WM_APP_RX_STATUS + 30: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK31);} break;
+        case WM_APP_RX_STATUS + 31: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK32);} break;
 
         case WM_COMMAND:
         {
@@ -247,9 +297,7 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             switch (id)
             {
                 case IDC_BTN_START1:  { IDC_BTN_START(hDlg, GAPP,  0); return (INT_PTR)TRUE; }break;
-				case IDC_BTN_START2:  { 
-                    IDC_BTN_START(hDlg, GAPP,  1); 
-                    return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START2:  { IDC_BTN_START(hDlg, GAPP,  1); return (INT_PTR)TRUE; }break;
 				case IDC_BTN_START3:  { IDC_BTN_START(hDlg, GAPP,  2); return (INT_PTR)TRUE; }break;
 				case IDC_BTN_START4:  { IDC_BTN_START(hDlg, GAPP,  3); return (INT_PTR)TRUE; }break;
 				case IDC_BTN_START5:  { IDC_BTN_START(hDlg, GAPP,  4); return (INT_PTR)TRUE; }break;

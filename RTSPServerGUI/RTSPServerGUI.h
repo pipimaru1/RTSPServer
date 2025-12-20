@@ -16,7 +16,6 @@ public:
     ~RtspServerController();
 
     bool Start(int inPort, int outPort, const std::string& channelUtf8, HWND hwndNotify);
-    //bool StartEx(int inPort, int outPort, int _ch, const std::string& channelUtf8, HWND hwndNotify);
 	bool StartExx(HWND hwndNotify); //rCtrl‚Ì“à—e‚ðŽg‚¤”Å
 
     void Stop();
@@ -24,8 +23,6 @@ public:
 
 private:
     void ThreadMain(int inPort, int outPort, std::string channelUtf8);
-    //void ThreadMainEx(int inPort, int outPort, std::string channelUtf8);
-
     void ThreadMainExx();
 
     //void ThreadMain(GST_RTSP_SVPARAMS& _gsrv, std::string channelUtf8);
@@ -125,24 +122,24 @@ struct APP_SETTINGS
 	};
 
     std::array<UINT, MAXCH> _DEF_PORTIN = {
-		5004,5005,5006,5007,
-        5008,5009,5010,5011,
-        5012,5013,5014,5015,
-        5016,5017,5018,5019,
-        5020,5021,5022,5023,
-        5024,5025,5026,5027,
-        5028,5029,5030,5031,
-        5032,5033,5034,5035
+		5004,5006,5008,5010,
+        5012,5014,5016,5018,
+        5020,5022,5024,5026,
+        5028,5030,5032,5034,
+        5036,5038,5040,5042,
+        5044,5046,5048,5050,
+        5052,5054,5056,5058,
+		5060,5062,5064,5066
 	};
     std::array<UINT, MAXCH> _DEF_PORTOUT = {
-        8554,8555,8556,8557,
-        8558,8559,8560,8561,
-        8562,8563,8564,8565,
-        8566,8567,8568,8569,
-        8570,8571,8572,8573,
-        8574,8575,8576,8577,
-        8578,8579,8580,8581,
-        8582,8583,8584,8585
+        8554,8556,8558,8560,
+		8562,8564,8566,8568,
+		8570,8572,8574,8576,
+		8578,8580,8582,8584,
+		8586,8588,8590,8592,
+		8594,8596,8598,8600,
+		8602,8604,8606,8608,
+		8610,8612,8614,8616
     };
 };
 /////////////////////////////////////////

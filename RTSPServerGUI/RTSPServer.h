@@ -21,6 +21,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 
 //  OpenRTSPServer()
+//  OpenRTSPServerEx()
 //   　　┃
 //   コールバック登録
 // RTSP MediaFactoryシグナル監視   
@@ -35,6 +36,7 @@
 //   ファンクションコール                  ファンクションコール             コールバック            ファンクションコール  
 // 　メインGUIに通知　  　　　　　　　　　 メインGUIに通知　　　　　　　パイプラインをリスタート   メインGUIに通知　  　　
 // 　NotifyRx(false, ch)                 　NotifyRx(true, ch)           CALLBK_RstPipeline()       NotifyRx(false, ch)   
+// 　NotifyRxEX(false, ch)               　NotifyRxEX(true, ch)         CALLBK_RstPipeline()       NotifyRxEX(false, ch)   
 //     　┃                                      ┃                 　                               　    ┃                
 //  PostMessageWでflase通知               PostMessageWでtrue通知                                  PostMessageWでtrue通知
 // 

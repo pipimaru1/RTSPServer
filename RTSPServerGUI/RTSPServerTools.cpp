@@ -33,27 +33,6 @@ bool RtspServerController::Start(int inPort, int outPort, const std::string& cha
     return true;
 }
 
-/*
-bool RtspServerController::StartEx(int inPort, int outPort, int _ch, const std::string& channelUtf8, HWND hwndNotify)
-{
-    if (running_.load())
-        return false;
-
-    hwndNotify_ = hwndNotify;
-    rCtrl.ptLoop = nullptr;
-
-    running_.store(true);
-
-    rCtrl.ch = _ch;
-	rCtrl.in_port = inPort;
-	rCtrl.out_port = outPort;
-	rCtrl.channel_name = channelUtf8;
-
-    th_ = std::thread(&RtspServerController::ThreadMainExx, this);
-
-    return true;
-}
-*/
 
 bool RtspServerController::StartExx(HWND hwndNotify)
 {
@@ -119,41 +98,6 @@ void RtspServerController::ThreadMain(int inPort, int outPort, std::string chann
     // running_ は Stop() 側で最終確定します（ここでは触らない）
 }
 
-//////////////////////////////////////////////////////////
-// RTSPサーバースレッドのメイン
-// 
-//////////////////////////////////////////////////////////
-/*
-void RtspServerController::ThreadMainEx(int inPort, int outPort, std::string channelUtf8)
-{
-    //「ThreadMain() が動いている間」は arg0 などのローカル変数はキープされています。
-	// なのでパイプラインが動いている間は基本的には有効。
-
-    // OpenRTSPServer が g_option_context_parse を呼ぶので、ダミー argv を用意
-    char arg0[] = "RTSPServerGUI";
-    char* argv[] = { arg0, nullptr };
-    int argc = 1;
-
-	RTSPCtrl _rctrl; 
-	_rctrl.in_port = inPort;
-	_rctrl.out_port = outPort;
-	_rctrl.channel_name = channelUtf8;
-
-    // loop_ は OpenRTSPServer 内で g_main_loop_new されます
-    //int r = OpenRTSPServer(loop_, inPort, outPort, channelUtf8, argc, argv);
-    int r = OpenRTSPServerEx(_rctrl, argc, argv);
-
-    (void)r;
-
-    // 予期せぬ終了や Stop 後の終了も含め、GUIへ通知
-    if (hwndNotify_ != nullptr)
-    {
-        PostMessageW(hwndNotify_, WM_APP_SERVER_EXITED, 0, 0);
-    }
-
-    // running_ は Stop() 側で最終確定します（ここでは触らない）
-}
-*/
 //////////////////////////////////////////////////////////
 // RTSPサーバースレッドのメイン
 // 
