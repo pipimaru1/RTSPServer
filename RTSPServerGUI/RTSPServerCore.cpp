@@ -37,6 +37,7 @@ HWND g_gui_hwnd = nullptr;
 std::atomic<bool> g_rx{ false };
 
 // ★追加：最後に受信した時刻（μs）
+//std::atomic<gint64> g_last_rx_us{ 0 };
 std::atomic<gint64> g_last_rx_us{ 0 };
 // ★追加：受信が途切れたとみなす時間（udpsrc timeout と同じ 5秒推奨）
 const gint64 g_rx_timeout_us = 5 * G_USEC_PER_SEC;
@@ -81,19 +82,43 @@ void NotifyRx(bool receiving, UINT _ch)
 }
 
 //////////////////////////////////////////////////////////
+// 
 // ★追加：一定時間受信が無ければOFFにする
+// 
 ///////////////////////////////////////////////////////////
-gboolean CALLBK_RxWatch(gpointer user_data)
+gboolean CALLBK_RxWatch(gpointer)
 {
 	int ch = 0; // 1ch想定
 
     if (!g_rx.load())
         return G_SOURCE_CONTINUE; // 既にOFFなら何もしない
 
-    if(user_data)
+    const gint64 now = g_get_monotonic_time();
+    const gint64 last = g_last_rx_us.load();
+
+    if (last != 0 && (now - last) > g_rx_timeout_us)
+    {
+        NotifyRx(false, ch);
+    }
+    return G_SOURCE_CONTINUE;
+}
+
+///////////////////////////////////////////////////////////
+//
+// 拡張版：チャンネル番号を user_data で受け取る
+// 
+///////////////////////////////////////////////////////////
+gboolean CALLBK_RxWatchEx(gpointer user_data)
+{
+    int ch = 0; // 1ch想定
+
+    if (!g_rx.load())
+        return G_SOURCE_CONTINUE; // 既にOFFなら何もしない
+
+    if (user_data)
     {
         RTSPCtrl* _rctrl = static_cast<RTSPCtrl*>(user_data);
-		ch = _rctrl->ch;
+        ch = _rctrl->ch;
     }
 
     const gint64 now = g_get_monotonic_time();
@@ -105,29 +130,53 @@ gboolean CALLBK_RxWatch(gpointer user_data)
     }
     return G_SOURCE_CONTINUE;
 }
+
+
 #endif
 
 //////////////////////////////////////////////////
 // 
 // PROBE_UdpSrcBuffer()は最後に受信した時刻を更新
 // 一定時間受信が無ければ、CALLBK_RxWatch()がOFFにする
-// user_dataはnullでなければ RTSPCtrl* としてキャストする
 // 
 ///////////////////////////////////////////////////
 GstPadProbeReturn PROBE_UdpSrcBuffer(GstPad*, GstPadProbeInfo* info, gpointer user_data)
 {
 	int ch = 0; // 1ch想定
-    if(user_data)
-    {
-        RTSPCtrl* _rctrl = static_cast<RTSPCtrl*>(user_data);
-		ch = _rctrl->ch;
-    }
 
 #ifdef _WIN32
     // ★追加：最後に受信した時刻を更新
     // ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     // マルチチャンネル化の時に配列化すること
     g_last_rx_us.store(g_get_monotonic_time()); 
+    // バッファが流れた＝受信できている
+    NotifyRx(true, ch);
+#endif
+
+    return GST_PAD_PROBE_OK;
+}
+
+//////////////////////////////////////////////////
+// 
+// PROBE_UdpSrcBufferEx()は最後に受信した時刻を更新
+// 一定時間受信が無ければ、CALLBK_RxWatch()がOFFにする
+// user_dataはnullでなければ RTSPCtrl* としてキャストする
+// 
+///////////////////////////////////////////////////
+GstPadProbeReturn PROBE_UdpSrcBufferEx(GstPad*, GstPadProbeInfo* info, gpointer user_data)
+{
+    int ch = 0; // 1ch想定
+    if (user_data)
+    {
+        RTSPCtrl* _rctrl = static_cast<RTSPCtrl*>(user_data);
+        ch = _rctrl->ch;
+    }
+
+#ifdef _WIN32
+    // ★追加：最後に受信した時刻を更新
+    // ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+    // マルチチャンネル化の時に配列化すること
+    g_last_rx_us.store(g_get_monotonic_time());
     // バッファが流れた＝受信できている
     NotifyRx(true, ch);
 #endif
@@ -189,10 +238,6 @@ gboolean CALLBK_BusWatchEx(GstBus* bus, GstMessage* msg, gpointer user_data)
 {
 	int _ch = 0; // 1ch想定
 	RTSPCtrl* _rctrl = static_cast<RTSPCtrl*>(user_data);
-	//MediaCtx* ctx = _rctrl->ptMediaCtx;
-    //_ch = _rctrl->ch;
-
-    //MediaCtx* ctx = static_cast<MediaCtx*>(user_data);
 
     switch (GST_MESSAGE_TYPE(msg)) {
         case GST_MESSAGE_ERROR: {
@@ -287,7 +332,9 @@ void CALLBK_MediaCfg(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer
     {
 		// Add watch timer
         // CALLBK_RxWatch
-		g_rx_watch_id = g_timeout_add(GST_INTERVAL_PORTWATCH, CALLBK_RxWatch, nullptr); //GST_INTERVAL_PORTWATCH = 500ms
+		g_rx_watch_id = g_timeout_add(GST_INTERVAL_PORTWATCH, 
+            CALLBK_RxWatch,     //通常版
+            nullptr);           //GST_INTERVAL_PORTWATCH = 500ms
     }
 #endif
 
@@ -297,7 +344,8 @@ void CALLBK_MediaCfg(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer
     ctx->pipeline = GST_ELEMENT(gst_object_ref(element)); // パイプライン参照を保持
 
     if (GstBus* bus = gst_element_get_bus(element)) {
-        gst_bus_add_watch(bus, CALLBK_BusWatchEx, ctx);  // ← MediaCtx* を渡す
+        gst_bus_add_watch(bus, 
+        CALLBK_BusWatch, ctx);  // ← MediaCtx* を渡す
 
         gst_object_unref(bus);
     }
@@ -314,14 +362,14 @@ void CALLBK_MediaCfg(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer
 
 /////////////////////////////////////////////////////////
 //
-// 拡張機能版 CALLBK_MediaCfg
+// 拡張機能版 CALLBK_MediaCfgEx
 // user_dataには RTSPCtrl* を渡されるようすること
 // さらにコールバック登録時に RTSPCtrl* を渡す
 //
 // ここからさらに下記の関数をコールバック登録している
-// CALLBK_RxWatch()
-// PROBE_UdpSrcBuffer()
-// CALLBK_BusWatch()
+// CALLBK_RxWatchEx()
+// PROBE_UdpSrcBufferEx()
+// CALLBK_BusWatchEx()
 // 
 /////////////////////////////////////////////////////////
 void CALLBK_MediaCfgEx(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer user_data)
@@ -353,7 +401,7 @@ void CALLBK_MediaCfgEx(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoint
                     ///////////////////////////////////////////////
                     gst_pad_add_probe(pad, 
                         GST_PAD_PROBE_TYPE_BUFFER, 
-                        PROBE_UdpSrcBuffer, 
+                        PROBE_UdpSrcBufferEx, 
                         _rctrl,
                         nullptr);
                     gst_object_unref(pad);
@@ -377,7 +425,7 @@ void CALLBK_MediaCfgEx(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoint
         ///////////////////////////////////////////
         g_rx_watch_id = g_timeout_add(
             GST_INTERVAL_PORTWATCH, 
-            CALLBK_RxWatch, 
+            CALLBK_RxWatchEx, 
             _rctrl); //GST_INTERVAL_PORTWATCH = 500ms
     }
 #endif
@@ -388,7 +436,10 @@ void CALLBK_MediaCfgEx(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoint
     _rctrl->ptctx->pipeline = GST_ELEMENT(gst_object_ref(element)); // パイプライン参照を保持
 
     if (GstBus* bus = gst_element_get_bus(element)) {
-		gst_bus_add_watch(bus, CALLBK_BusWatchEx, _rctrl);  // ← RTSPCtrlを渡す
+		gst_bus_add_watch(
+            bus, 
+            CALLBK_BusWatchEx, 
+            _rctrl);  // ← RTSPCtrlを渡す
         gst_object_unref(bus);
     }
     gst_object_unref(element);

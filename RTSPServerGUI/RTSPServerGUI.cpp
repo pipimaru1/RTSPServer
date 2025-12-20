@@ -226,7 +226,7 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
         case WM_APP_RX_STATUS+1:
         {
             const bool receiving = (wParam != 0);
-            CheckDlgButton(hDlg, IDC_CHK1, receiving ? BST_CHECKED : BST_UNCHECKED);
+            CheckDlgButton(hDlg, IDC_CHK2, receiving ? BST_CHECKED : BST_UNCHECKED);
             return (INT_PTR)TRUE;
         }
 

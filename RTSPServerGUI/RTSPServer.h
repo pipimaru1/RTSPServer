@@ -25,10 +25,12 @@
 //   コールバック登録
 // RTSP MediaFactoryシグナル監視   
 // CALLBK_MediaCfg()
+// CALLBK_MediaCfgEx()
 //　　   ┣━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
 //   タイマとして登録     　   　         Pad Probe コールバック          コールバック登録 
 //  最終受信からの経過時間チェック　　　 バッファ通過イベント              bus メッセージ監視
 // 　  CALLBK_RxWatch()　　               PROBE_UdpSrcBuffer()             CALLBK_BusWatch()
+//     CALLBK_RxWatchEx()                 PROBE_UdpSrcBufferEx()           CALLBK_BusWatchEx()
 //   　  ┃                                      ┃                              ┣━━━━━━━━━━━━┓ 
 //   ファンクションコール                  ファンクションコール             コールバック            ファンクションコール  
 // 　メインGUIに通知　  　　　　　　　　　 メインGUIに通知　　　　　　　パイプラインをリスタート   メインGUIに通知　  　　
