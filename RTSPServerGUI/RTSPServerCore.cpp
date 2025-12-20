@@ -185,11 +185,12 @@ gboolean CALLBK_RxWatchEx(gpointer user_data)
 
             _rctrl->br_kbps.store(kbps, std::memory_order_relaxed);
 
-            NotifyRxEx(true, _rctrl);
+            //NotifyRxEx(true, _rctrl);
 
         }
 
-        if (last != 0 && (now - last) > g_rx_timeout_us)
+        //if (last != 0 && (now - last) > g_rx_timeout_us)
+       if (last != 0 )
         {
             NotifyRxEx(false, _rctrl);
         }
@@ -246,30 +247,51 @@ GstPadProbeReturn PROBE_UdpSrcBufferEx(GstPad*, GstPadProbeInfo* info, gpointer 
         // ビットレート追加
         // ★受信時刻（既存の受信ON判定に使っているならそのまま）
         //_rctrl->g_last_rx_us.store(g_get_monotonic_time(), std::memory_order_relaxed);
-        GstBuffer* buf = gst_pad_probe_info_get_buffer(info);
-        if (!buf) 
-            return GST_PAD_PROBE_OK;
-        // ★追加：バイト数を足し込む（これだけ）
-        _rctrl->rx_bytes_accum.fetch_add((uint64_t)gst_buffer_get_size(buf), std::memory_order_relaxed);
+        //GstBuffer* buf;// = gst_pad_probe_info_get_buffer(info);
 
-        // ★送信元IP/port を取得して RTSPCtrl に保存
-        if (auto* meta = gst_buffer_get_net_address_meta(buf)) // :contentReference[oaicite:3]{index=3}
+        if (info->type & GST_PAD_PROBE_TYPE_BUFFER) 
         {
-            if (meta->addr && G_IS_INET_SOCKET_ADDRESS(meta->addr))
+            GstBuffer* buf = gst_pad_probe_info_get_buffer(info);
+            if (!buf)
+                return GST_PAD_PROBE_OK;
+            // ★追加：バイト数を足し込む（これだけ）
+            _rctrl->rx_bytes_accum.fetch_add(
+                (uint64_t)gst_buffer_get_size(buf), 
+                std::memory_order_relaxed);
+            // ★送信元IP/port を取得して RTSPCtrl に保存
+            if (auto* meta = gst_buffer_get_net_address_meta(buf)) // :contentReference[oaicite:3]{index=3}
             {
-                auto* isa = G_INET_SOCKET_ADDRESS(meta->addr);
-                GInetAddress* ia = g_inet_socket_address_get_address(isa);
-                gchar* ip = g_inet_address_to_string(ia);
-                guint16 port = g_inet_socket_address_get_port(isa);
-                if (ip)
+                if (meta->addr && G_IS_INET_SOCKET_ADDRESS(meta->addr))
                 {
-                    std::lock_guard<std::mutex> lk(_rctrl->src_mtx);
-                    _rctrl->src_ip = ip;     // UTF-8
-                    _rctrl->src_port = (uint16_t)port;
-                    g_free(ip);
+                    auto* isa = G_INET_SOCKET_ADDRESS(meta->addr);
+                    GInetAddress* ia = g_inet_socket_address_get_address(isa);
+                    gchar* ip = g_inet_address_to_string(ia);
+                    guint16 port = g_inet_socket_address_get_port(isa);
+                    if (ip)
+                    {
+                        std::lock_guard<std::mutex> lk(_rctrl->src_mtx);
+                        _rctrl->src_ip = ip;     // UTF-8
+                        _rctrl->src_port = (uint16_t)port;
+                        g_free(ip);
+                    }
                 }
             }
         }
+
+        if (info->type & GST_PAD_PROBE_TYPE_BUFFER_LIST) {
+            GstBufferList* bl = gst_pad_probe_info_get_buffer_list(info);
+            if (bl) {
+                const guint n = gst_buffer_list_length(bl);
+                for (guint i = 0; i < n; ++i) {
+                    GstBuffer* buf = gst_buffer_list_get(bl, i);
+                    if (buf) 
+                        _rctrl->rx_bytes_accum.fetch_add(
+                            (uint64_t)gst_buffer_get_size(buf),
+                            std::memory_order_relaxed);
+                }
+            }
+        }
+
 
         // バッファが流れた＝受信できている
         NotifyRxEx(true, _rctrl);
@@ -408,7 +430,10 @@ void CALLBK_MediaCfg(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer
 					// PROBE_UdpSrcBuffer()は最後に受信した時刻を更新
 					// 一定時間受信が無ければOFFにする
                     ///////////////////////////////////////////////
-                    gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, PROBE_UdpSrcBuffer, nullptr, nullptr);
+                    gst_pad_add_probe(pad, 
+                        GST_PAD_PROBE_TYPE_BUFFER, 
+                        PROBE_UdpSrcBuffer, 
+                        nullptr, nullptr);
                     gst_object_unref(pad);
                     g_object_set_data(G_OBJECT(src), "rx-probe-installed", GINT_TO_POINTER(1));
                 }
@@ -498,8 +523,9 @@ void CALLBK_MediaCfgEx(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoint
                     // 一定時間受信が無ければOFFにする
                     ///////////////////////////////////////////////
                     gst_pad_add_probe(pad, 
-                        GST_PAD_PROBE_TYPE_BUFFER, 
-                        PROBE_UdpSrcBufferEx, 
+                        //GST_PAD_PROBE_TYPE_BUFFER, 
+                        (GstPadProbeType)(GST_PAD_PROBE_TYPE_BUFFER | GST_PAD_PROBE_TYPE_BUFFER_LIST),
+                        PROBE_UdpSrcBufferEx,           //ハンドラ
                         _rctrl,
                         nullptr);
                     gst_object_unref(pad);

@@ -13,69 +13,9 @@
 #define IDC_RTSPSERVERGUI               109
 #define IDR_MAINFRAME                   128
 #define IDD_MAIN                        129
-#define IDC_SRCIP_1                     1006
-#define IDC_SRCIP_2                     1007
-#define IDC_BITRATE_1                   1008
-#define IDC_BITRATE_2                   1009
-#define IDC_SRCIP_3                     1010
-#define IDC_SRCIP_4                     1011
-#define IDC_BITRATE_3                   1012
-#define IDC_BITRATE_4                   1013
-#define IDC_SRCIP_5                     1014
-#define IDC_SRCIP_6                     1015
-#define IDC_BITRATE_5                   1016
-#define IDC_BITRATE_6                   1017
-#define IDC_SRCIP_7                     1018
-#define IDC_SRCIP_8                     1019
-#define IDC_BITRATE_7                   1020
-#define IDC_BITRATE_8                   1021
-#define IDC_SRCIP_9                     1038
-#define IDC_SRCIP_10                    1039
-#define IDC_BITRATE_9                   1040
-#define IDC_BITRATE_10                  1041
-#define IDC_SRCIP_11                    1042
-#define IDC_SRCIP_12                    1043
-#define IDC_BITRATE_11                  1044
-#define IDC_BITRATE_12                  1045
-#define IDC_SRCIP_13                    1046
-#define IDC_SRCIP_14                    1047
-#define IDC_BITRATE_13                  1048
-#define IDC_BITRATE_14                  1049
-#define IDC_SRCIP_15                    1050
-#define IDC_SRCIP_16                    1051
-#define IDC_BITRATE_15                  1052
-#define IDC_BITRATE_16                  1053
-#define IDC_SRCIP_17                    1070
-#define IDC_SRCIP_18                    1071
-#define IDC_BITRATE_17                  1072
-#define IDC_BITRATE_18                  1073
-#define IDC_SRCIP_19                    1074
-#define IDC_SRCIP_20                    1075
-#define IDC_BITRATE_19                  1076
-#define IDC_BITRATE_20                  1077
-#define IDC_SRCIP_21                    1078
-#define IDC_SRCIP_22                    1079
-#define IDC_BITRATE_21                  1080
-#define IDC_BITRATE_22                  1081
-#define IDC_SRCIP_23                    1082
-#define IDC_SRCIP_24                    1083
-#define IDC_BITRATE_23                  1084
-#define IDC_BITRATE_24                  1085
-#define IDC_SRCIP_25                    1086
-#define IDC_SRCIP_26                    1087
-#define IDC_BITRATE_25                  1088
-#define IDC_BITRATE_26                  1089
-#define IDC_SRCIP_27                    1090
-#define IDC_SRCIP_28                    1091
-#define IDC_BITRATE_27                  1092
-#define IDC_BITRATE_28                  1093
-#define IDC_SRCIP_29                    1094
-#define IDC_SRCIP_30                    1095
-#define IDC_BITRATE_29                  1096
-#define IDC_BITRATE_30                  1097
-#define IDC_SRCIP_31                    1098
-#define IDC_SRCIP_32                    1099
-#define IDC_BITRATE_31                  1100
+#define IDC_STATIC                      -1
+#define IDC_BTN_START_ALL               130
+
 #define IDC_BTN_START1                  1101
 #define IDC_BTN_START2                  1102
 #define IDC_BTN_START3                  1103
@@ -108,8 +48,7 @@
 #define IDC_BTN_START30                 1130
 #define IDC_BTN_START31                 1131
 #define IDC_BTN_START32                 1132
-#define IDC_BTN_START_ALL               1133
-#define IDC_BITRATE_32                  1134
+
 #define IDC_BTN_STOP1                   1201
 #define IDC_BTN_STOP2                   1202
 #define IDC_BTN_STOP3                   1203
@@ -143,6 +82,7 @@
 #define IDC_BTN_STOP31                  1231
 #define IDC_BTN_STOP32                  1232
 #define IDC_BTN_STOP_ALL                1233
+
 #define IDC_EDIT_PORTIN1                1301
 #define IDC_EDIT_PORTIN2                1302
 #define IDC_EDIT_PORTIN3                1303
@@ -175,6 +115,7 @@
 #define IDC_EDIT_PORTIN30               1330
 #define IDC_EDIT_PORTIN31               1331
 #define IDC_EDIT_PORTIN32               1332
+
 #define IDC_EDIT_PORTOUT1               1401
 #define IDC_EDIT_PORTOUT2               1402
 #define IDC_EDIT_PORTOUT3               1403
@@ -207,6 +148,7 @@
 #define IDC_EDIT_PORTOUT30              1430
 #define IDC_EDIT_PORTOUT31              1431
 #define IDC_EDIT_PORTOUT32              1432
+
 #define IDC_CHK1                        1501
 #define IDC_CHK2                        1502
 #define IDC_CHK3                        1503
@@ -239,6 +181,7 @@
 #define IDC_CHK30                       1530
 #define IDC_CHK31                       1531
 #define IDC_CHK32                       1532
+
 #define IDC_EDIT_PORTNAME1              1601
 #define IDC_EDIT_PORTNAME2              1602
 #define IDC_EDIT_PORTNAME3              1603
@@ -271,7 +214,75 @@
 #define IDC_EDIT_PORTNAME30             1630
 #define IDC_EDIT_PORTNAME31             1631
 #define IDC_EDIT_PORTNAME32             1632
-#define IDC_STATIC                      -1
+
+#define IDC_SRCIP_1                     1701
+#define IDC_SRCIP_2                     1702
+#define IDC_SRCIP_3                     1703
+#define IDC_SRCIP_4                     1704
+#define IDC_SRCIP_5                     1705
+#define IDC_SRCIP_6                     1706
+#define IDC_SRCIP_7                     1707
+#define IDC_SRCIP_8                     1708
+#define IDC_SRCIP_9                     1709
+#define IDC_SRCIP_10                    1710
+#define IDC_SRCIP_11                    1711
+#define IDC_SRCIP_12                    1712
+#define IDC_SRCIP_13                    1713
+#define IDC_SRCIP_14                    1714
+#define IDC_SRCIP_15                    1715
+#define IDC_SRCIP_16                    1716
+#define IDC_SRCIP_17                    1717
+#define IDC_SRCIP_18                    1718
+#define IDC_SRCIP_19                    1719
+#define IDC_SRCIP_20                    1720
+#define IDC_SRCIP_21                    1721
+#define IDC_SRCIP_22                    1722
+#define IDC_SRCIP_23                    1723
+#define IDC_SRCIP_24                    1724
+#define IDC_SRCIP_25                    1725
+#define IDC_SRCIP_26                    1726
+#define IDC_SRCIP_27                    1727
+#define IDC_SRCIP_28                    1728
+#define IDC_SRCIP_29                    1729
+#define IDC_SRCIP_30                    1730
+#define IDC_SRCIP_31                    1731
+#define IDC_SRCIP_32                    1732
+
+#define IDC_BITRATE_1                   1801
+#define IDC_BITRATE_2                   1802
+#define IDC_BITRATE_3                   1803
+#define IDC_BITRATE_4                   1804
+#define IDC_BITRATE_5                   1805
+#define IDC_BITRATE_6                   1806
+#define IDC_BITRATE_7                   1807
+#define IDC_BITRATE_8                   1808
+#define IDC_BITRATE_9                   1809
+#define IDC_BITRATE_10                  1810
+#define IDC_BITRATE_11                  1811
+#define IDC_BITRATE_12                  1812
+#define IDC_BITRATE_13                  1813
+#define IDC_BITRATE_14                  1814
+#define IDC_BITRATE_15                  1815
+#define IDC_BITRATE_16                  1816
+#define IDC_BITRATE_17                  1817
+#define IDC_BITRATE_18                  1818
+#define IDC_BITRATE_19                  1819
+#define IDC_BITRATE_20                  1820
+#define IDC_BITRATE_21                  1821
+#define IDC_BITRATE_22                  1822
+#define IDC_BITRATE_23                  1823
+#define IDC_BITRATE_24                  1824
+#define IDC_BITRATE_25                  1825
+#define IDC_BITRATE_26                  1826
+#define IDC_BITRATE_27                  1827
+#define IDC_BITRATE_28                  1828
+#define IDC_BITRATE_29                  1829
+#define IDC_BITRATE_30                  1830
+#define IDC_BITRATE_31                  1831
+#define IDC_BITRATE_32                  1832
+
+#define IDC_CMB_BCFRASE_1               1932
+
 
 // Next default values for new objects
 // 

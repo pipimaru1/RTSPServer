@@ -38,17 +38,21 @@
 
 ///////////////////////////////////////////////////////////////////
 // テスト用ffmpeg例 USBカメラの映像をRTSPserverに送信する例
+// カメラデバイス一覧表示コマンド
+// ffmpeg -list_devices true -f dshow -i nul
 // 家のPC
 // 標準画質
 // ffmpeg -f dshow -i video="Logicool BRIO"  -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency  -f rtp rtp://127.0.0.1:5004
 // HD画質
 // ffmpeg -f dshow -framerate 30 -video_size 1920x1080 -i video="Logicool BRIO" -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5004
 // ffmpeg -f dshow -framerate 30 -video_size 1920x1080 -i video="Logicool BRIO" -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5005
-
 // 135x "FHD Camera"
 // ffmpeg -f dshow -framerate 30 -video_size 1920x1080 -i video="FHD Camera" -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5004
-
-
+//
+// HP
+// ffmpeg -f dshow -framerate 30 -video_size 1920x1080 -i video="HP 5MP Camera" -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5004
+// 
+// 
 ///////////////////////////////////////////////////////////////////
 // GUI（IIS マネージャ）の手順
 // 「IIS マネージャ」（inetmgr）を開く
