@@ -34,13 +34,18 @@ gboolean disable_rtcp;// = DEFAULT_DISABLE_RTCP;
 ///////////////////////////////////////////////////////////
 #ifdef _WIN32
 HWND g_gui_hwnd = nullptr;
+
+// 受信中かどうか
 std::atomic<bool> g_rx{ false };
+//std::atomic<bool> gRx{ false };
 
 // ★追加：最後に受信した時刻（μs）
 //std::atomic<gint64> g_last_rx_us{ 0 };
 std::atomic<gint64> g_last_rx_us{ 0 };
+
 // ★追加：受信が途切れたとみなす時間（udpsrc timeout と同じ 5秒推奨）
 const gint64 g_rx_timeout_us = 5 * G_USEC_PER_SEC;
+
 // ★追加：監視タイマID（1ch想定）
 guint g_rx_watch_id = 0;
 
@@ -81,6 +86,31 @@ void NotifyRx(bool receiving, UINT _ch)
     }
 }
 
+////////////////////////////////////////////////////////
+// 
+// 受信状態の通知
+// _ch: チャンネル番号（0～MAXCH-1）
+// 受信状態（受信中 / 受信なし）を GUI に通知する関数
+// 拡張版
+// 
+////////////////////////////////////////////////////////
+void NotifyRxEx(bool receiving, RTSPCtrl* _rctrl)
+{
+	if (_rctrl)
+    {
+        UINT _ch = _rctrl->ch;
+        bool prev = _rctrl->g_rx.exchange(receiving);
+
+        if (prev == receiving) 
+            return;
+
+        if (g_gui_hwnd)
+        {
+            PostMessageW(g_gui_hwnd, WM_APP_RX_STATUS + _ch, receiving ? 1 : 0, 0);
+        }
+    }
+}
+
 //////////////////////////////////////////////////////////
 // 
 // ★追加：一定時間受信が無ければOFFにする
@@ -110,23 +140,25 @@ gboolean CALLBK_RxWatch(gpointer)
 ///////////////////////////////////////////////////////////
 gboolean CALLBK_RxWatchEx(gpointer user_data)
 {
-    int ch = 0; // 1ch想定
-
-    if (!g_rx.load())
-        return G_SOURCE_CONTINUE; // 既にOFFなら何もしない
+    RTSPCtrl* _rctrl;
 
     if (user_data)
     {
-        RTSPCtrl* _rctrl = static_cast<RTSPCtrl*>(user_data);
-        ch = _rctrl->ch;
-    }
+        _rctrl = static_cast<RTSPCtrl*>(user_data);
+        //ch = _rctrl->ch;
+        //int ch = 0; // 1ch想定
 
-    const gint64 now = g_get_monotonic_time();
-    const gint64 last = g_last_rx_us.load();
+        if (!_rctrl->g_rx.load())
+            return G_SOURCE_CONTINUE; // 既にOFFなら何もしない
 
-    if (last != 0 && (now - last) > g_rx_timeout_us)
-    {
-        NotifyRx(false, ch);
+
+        const gint64 now = g_get_monotonic_time();
+        const gint64 last = _rctrl->g_last_rx_us.load();
+
+        if (last != 0 && (now - last) > g_rx_timeout_us)
+        {
+            NotifyRxEx(false, _rctrl);
+        }
     }
     return G_SOURCE_CONTINUE;
 }
@@ -159,7 +191,7 @@ GstPadProbeReturn PROBE_UdpSrcBuffer(GstPad*, GstPadProbeInfo* info, gpointer us
 //////////////////////////////////////////////////
 // 
 // PROBE_UdpSrcBufferEx()は最後に受信した時刻を更新
-// 一定時間受信が無ければ、CALLBK_RxWatch()がOFFにする
+// 一定時間受信が無ければ、CALLBK_RxWatchEx()がOFFにする
 // user_dataはnullでなければ RTSPCtrl* としてキャストする
 // 
 ///////////////////////////////////////////////////
@@ -169,18 +201,18 @@ GstPadProbeReturn PROBE_UdpSrcBufferEx(GstPad*, GstPadProbeInfo* info, gpointer 
     if (user_data)
     {
         RTSPCtrl* _rctrl = static_cast<RTSPCtrl*>(user_data);
-        ch = _rctrl->ch;
-    }
+        //ch = _rctrl->ch;
 
 #ifdef _WIN32
-    // ★追加：最後に受信した時刻を更新
-    // ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
-    // マルチチャンネル化の時に配列化すること
-    g_last_rx_us.store(g_get_monotonic_time());
-    // バッファが流れた＝受信できている
-    NotifyRx(true, ch);
+        // ★追加：最後に受信した時刻を更新
+        // ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+        // マルチチャンネル化の時に配列化すること
+        _rctrl->g_last_rx_us.store(g_get_monotonic_time());
+        // バッファが流れた＝受信できている
+        NotifyRxEx(true, _rctrl);
 #endif
 
+    }
     return GST_PAD_PROBE_OK;
 }
 
@@ -236,7 +268,7 @@ gboolean CALLBK_BusWatch(GstBus* bus, GstMessage* msg, gpointer user_data)
 
 gboolean CALLBK_BusWatchEx(GstBus* bus, GstMessage* msg, gpointer user_data)
 {
-	int _ch = 0; // 1ch想定
+	//int _ch = 0; // 1ch想定
 	RTSPCtrl* _rctrl = static_cast<RTSPCtrl*>(user_data);
 
     switch (GST_MESSAGE_TYPE(msg)) {
@@ -260,7 +292,7 @@ gboolean CALLBK_BusWatchEx(GstBus* bus, GstMessage* msg, gpointer user_data)
             if (s && gst_structure_has_name(s, "GstUDPSrcTimeout")) {
                 g_print("UDPSRC timeout -> restart\n");
 #ifdef _WIN32
-                NotifyRx(false, _ch); // ★無信号 通知
+                NotifyRxEx(false, _rctrl); // ★無信号 通知
 #endif
                 g_idle_add(CALLBK_RstPipeline, _rctrl->ptctx->pipeline);
             }
@@ -417,13 +449,13 @@ void CALLBK_MediaCfgEx(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoint
     // CALLBK_RxWatch 内で g_rx を参照しているので
     // 二重登録は問題ないが念のためチェック
     ///////////////////////////////////////////
-    if (g_rx_watch_id == 0)
+    if (_rctrl->g_rx_watch_id == 0)
     {
         ///////////////////////////////////////////
         // Add watch timer
         // CALLBK_RxWatch
         ///////////////////////////////////////////
-        g_rx_watch_id = g_timeout_add(
+        _rctrl->g_rx_watch_id = g_timeout_add(
             GST_INTERVAL_PORTWATCH, 
             CALLBK_RxWatchEx, 
             _rctrl); //GST_INTERVAL_PORTWATCH = 500ms
@@ -957,25 +989,12 @@ int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[])
         // いやー、ポインタの勉強になりますね。
         //////////////////////////////////////////
 //#if 1
-        //_rctrlはコールバック内で使うのでstaticにする
-        //static RTSPCtrl _rctrl;
-        //_rctrl.ch = 0;
-        //_rctrl.out_port = out_port;
-        //_rctrl.ptLoop = loop;
-        //_rctrl.channel_name = channel_name;
 
         g_signal_connect(
             factory,
             "media-configure",
             G_CALLBACK(CALLBK_MediaCfgEx),
             &_rctrl /* ユーザーデータ */);
-//#else
-//        g_signal_connect(
-//            factory,
-//            "media-configure",
-//            G_CALLBACK(CALLBK_MediaCfg),
-//            loop /* ユーザーデータ */);
-//#endif
 
         // ADD Factory
         gst_rtsp_mount_points_add_factory(mounts, sstr_channel.str().c_str(), factory);
@@ -1010,8 +1029,13 @@ int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[])
             std::cout << "Stream Ready at HLS:" << hls_dir.c_str() << std::endl;
         }
     }
-
     g_main_loop_run(_rctrl.ptLoop);
+
+	// タイマ削除
+    if (_rctrl.g_rx_watch_id != 0) {
+        g_source_remove(_rctrl.g_rx_watch_id);
+        _rctrl.g_rx_watch_id = 0;
+    }
     return 0;
 }
 
