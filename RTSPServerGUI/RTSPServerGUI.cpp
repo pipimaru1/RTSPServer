@@ -76,8 +76,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 }
 
 bool IDC_BTN_START(
-    HWND _hDlg, 
-	RtspServerController& _g_server,
+    HWND _hDlg,
+    RtspServerController& _g_server,
+    UINT _ch,
     UINT _IDC_BTN_START,
     UINT _IDC_BTN_STOP,
     UINT _IDC_EDIT_PORTIN,
@@ -110,27 +111,27 @@ bool IDC_BTN_START(
 
     // 起動前に設定保存（再起動時にそのまま）
 	SaveSettings(_hDlg, _IDC_EDIT_PORTIN, _IDC_EDIT_PORTOUT, _IDC_EDIT_PORTNAME);
-#define NO_USE_STUCT_GSTRSV
-
-#if defined(NO_USE_STUCT_GSTRSV)
     std::string channelUtf8 = WideToUtf8(channelW);
-    if (!_g_server.Start(inPort, outPort, channelUtf8, _hDlg))
-    {
-        MessageBoxW(_hDlg, L"既に起動中です。", L"情報", MB_OK | MB_ICONINFORMATION);
-        return true;
-    }
+
+#if 0    
+    bool _ret = _g_server.Start(inPort, outPort, channelUtf8, _hDlg);
 #else
-	GST_RTSP_SVPARAMS _gsrv;
-	_gsrv.in_port = inPort;
-	_gsrv.out_port = outPort;
-	_gsrv.channel_name = WideToUtf8(channelW);
-    if (!_g_server.Start(_gsrv, _hDlg))
+
+    //bool _ret = _g_server.StartEx(inPort, outPort, _ch, channelUtf8, _hDlg);
+	_g_server.rCtrl.ch = _ch; // チャンネル番号をセット
+	_g_server.rCtrl.in_port = inPort;
+	_g_server.rCtrl.out_port = outPort;
+	_g_server.rCtrl.channel_name = channelUtf8;
+
+    bool _ret = _g_server.StartExx(_hDlg);
+#endif
+
+    if (!_ret)
     {
         MessageBoxW(_hDlg, L"既に起動中です。", L"情報", MB_OK | MB_ICONINFORMATION);
         return true;
     }
 
-#endif
     SetRunningUi(_hDlg, true,
         _IDC_BTN_START,
         _IDC_BTN_STOP,
@@ -140,16 +141,21 @@ bool IDC_BTN_START(
     );
     return true;
 }
+///////////////////////////////////////////////////////////////////////////////
 bool IDC_BTN_START(
     HWND _hDlg,
     APP_SETTINGS& _GAPP,
     UINT _ch
 ){
+//	gGstSv[_ch].rCtrl.ch = _ch; // チャンネル番号をセット
+
     return IDC_BTN_START(
         _hDlg,
 		gGstSv[_ch],
-		_GAPP.IDC_BTN_START[_ch],
-        _GAPP.IDC_BTN_STOP[_ch],
+        _ch,
+        //以下は初期値配列なのでクラスとは別レイヤとして考えること
+		_GAPP.IDC_BTN_START[_ch],       
+        _GAPP.IDC_BTN_STOP[_ch],        
         _GAPP.IDC_EDIT_PORTIN[_ch],
 		_GAPP.IDC_EDIT_PORTOUT[_ch],
 		_GAPP.IDC_EDIT_PORTNAME[_ch],
@@ -177,6 +183,7 @@ void BTN_STOP(
         );
     CheckDlgButton(_hDlg, _IDC_CHK, BST_UNCHECKED);
 }
+
 void BTN_STOP(
     HWND _hDlg,
 	APP_SETTINGS& _GAPP,

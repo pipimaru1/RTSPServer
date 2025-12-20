@@ -23,7 +23,7 @@ bool RtspServerController::Start(int inPort, int outPort, const std::string& cha
         return false;
 
     hwndNotify_ = hwndNotify;
-    loop_ = nullptr;
+    rCtrl.ptLoop = nullptr;
 
     running_.store(true);
 
@@ -39,7 +39,7 @@ bool RtspServerController::StartEx(int inPort, int outPort, int _ch, const std::
         return false;
 
     hwndNotify_ = hwndNotify;
-    loop_ = nullptr;
+    rCtrl.ptLoop = nullptr;
 
     running_.store(true);
 
@@ -50,11 +50,19 @@ bool RtspServerController::StartEx(int inPort, int outPort, int _ch, const std::
 
     th_ = std::thread(&RtspServerController::ThreadMainExx, this);
 
-    return false;
+    return true;
 }
 
+bool RtspServerController::StartExx(HWND hwndNotify)
+{
+    if (running_.load())
+        return false;
 
-
+    hwndNotify_ = hwndNotify;
+    running_.store(true);
+    th_ = std::thread(&RtspServerController::ThreadMainExx, this);
+    return true;
+}
 
 // RTSPサーバーを停止
 void RtspServerController::Stop()
@@ -63,11 +71,11 @@ void RtspServerController::Stop()
         return;
 
     // loop_ が生成済みなら quit
-    if (loop_ != nullptr)
+    if (rCtrl.ptLoop != nullptr)
     {
-        g_main_loop_quit(loop_);
+        g_main_loop_quit(rCtrl.ptLoop);
         // wakeup を入れておくと止まりが良いことが多い
-        if (GMainContext* ctx = g_main_loop_get_context(loop_))
+        if (GMainContext* ctx = g_main_loop_get_context(rCtrl.ptLoop))
         {
             g_main_context_wakeup(ctx);
         }
@@ -77,10 +85,10 @@ void RtspServerController::Stop()
         th_.join();
 
     // OpenRTSPServer 側では unref していないのでここで unref
-    if (loop_ != nullptr)
+    if (rCtrl.ptLoop != nullptr)
     {
-        g_main_loop_unref(loop_);
-        loop_ = nullptr;
+        g_main_loop_unref(rCtrl.ptLoop);
+        rCtrl.ptLoop = nullptr;
     }
 
     running_.store(false);
@@ -97,7 +105,7 @@ void RtspServerController::ThreadMain(int inPort, int outPort, std::string chann
     int argc = 1;
 
     // loop_ は OpenRTSPServer 内で g_main_loop_new されます
-    int r = OpenRTSPServer(loop_, inPort, outPort, channelUtf8, argc, argv);
+    int r = OpenRTSPServer(rCtrl.ptLoop, inPort, outPort, channelUtf8, argc, argv);
     (void)r;
 
     // 予期せぬ終了や Stop 後の終了も含め、GUIへ通知
@@ -113,6 +121,7 @@ void RtspServerController::ThreadMain(int inPort, int outPort, std::string chann
 // RTSPサーバースレッドのメイン
 // 
 //////////////////////////////////////////////////////////
+/*
 void RtspServerController::ThreadMainEx(int inPort, int outPort, std::string channelUtf8)
 {
     //「ThreadMain() が動いている間」は arg0 などのローカル変数はキープされています。
@@ -142,7 +151,7 @@ void RtspServerController::ThreadMainEx(int inPort, int outPort, std::string cha
 
     // running_ は Stop() 側で最終確定します（ここでは触らない）
 }
-
+*/
 //////////////////////////////////////////////////////////
 // RTSPサーバースレッドのメイン
 // 

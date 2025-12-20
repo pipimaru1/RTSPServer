@@ -10,19 +10,21 @@ typedef struct _GMainLoop GMainLoop;
 class RtspServerController
 {
 public:
+    RTSPCtrl        rCtrl; //GMainLoop‚ðŠÜ‚Þ 
+
     RtspServerController();
     ~RtspServerController();
 
     bool Start(int inPort, int outPort, const std::string& channelUtf8, HWND hwndNotify);
     bool StartEx(int inPort, int outPort, int _ch, const std::string& channelUtf8, HWND hwndNotify);
-    
-    void Stop();
+	bool StartExx(HWND hwndNotify); //rCtrl‚Ì“à—e‚ðŽg‚¤”Å
 
+    void Stop();
     bool IsRunning() const { return running_.load(); }
 
 private:
     void ThreadMain(int inPort, int outPort, std::string channelUtf8);
-    void ThreadMainEx(int inPort, int outPort, std::string channelUtf8);
+    //void ThreadMainEx(int inPort, int outPort, std::string channelUtf8);
 
     void ThreadMainExx();
 
@@ -32,10 +34,9 @@ private:
 private:
     std::atomic<bool> running_{ false };
     std::thread       th_;
-    GMainLoop* loop_{ nullptr };
+    //GMainLoop*        loop_{ nullptr };
     HWND              hwndNotify_{ nullptr };
 
-	RTSPCtrl        rCtrl; //GMainLoop‚ðŠÜ‚Þ 
 };
 
 
