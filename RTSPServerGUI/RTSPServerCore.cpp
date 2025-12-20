@@ -83,34 +83,55 @@ void NotifyRx(bool receiving, UINT _ch)
 //////////////////////////////////////////////////////////
 // ★追加：一定時間受信が無ければOFFにする
 ///////////////////////////////////////////////////////////
-gboolean CALLBK_RxWatch(gpointer)
+gboolean CALLBK_RxWatch(gpointer user_data)
 {
+	int ch = 0; // 1ch想定
+
     if (!g_rx.load())
         return G_SOURCE_CONTINUE; // 既にOFFなら何もしない
+
+    if(user_data)
+    {
+        RTSPCtrl* _rctrl = static_cast<RTSPCtrl*>(user_data);
+		ch = _rctrl->ch;
+    }
 
     const gint64 now = g_get_monotonic_time();
     const gint64 last = g_last_rx_us.load();
 
     if (last != 0 && (now - last) > g_rx_timeout_us)
     {
-        NotifyRx(false, 0);
+        NotifyRx(false, ch);
     }
     return G_SOURCE_CONTINUE;
 }
 #endif
 
 //////////////////////////////////////////////////
+// 
 // PROBE_UdpSrcBuffer()は最後に受信した時刻を更新
 // 一定時間受信が無ければ、CALLBK_RxWatch()がOFFにする
+// user_dataはnullでなければ RTSPCtrl* としてキャストする
+// 
 ///////////////////////////////////////////////////
-GstPadProbeReturn PROBE_UdpSrcBuffer(GstPad*, GstPadProbeInfo* info, gpointer)
+GstPadProbeReturn PROBE_UdpSrcBuffer(GstPad*, GstPadProbeInfo* info, gpointer user_data)
 {
+	int ch = 0; // 1ch想定
+    if(user_data)
+    {
+        RTSPCtrl* _rctrl = static_cast<RTSPCtrl*>(user_data);
+		ch = _rctrl->ch;
+    }
+
 #ifdef _WIN32
     // ★追加：最後に受信した時刻を更新
+    // ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+    // マルチチャンネル化の時に配列化すること
     g_last_rx_us.store(g_get_monotonic_time()); 
     // バッファが流れた＝受信できている
-    NotifyRx(true, 0);
+    NotifyRx(true, ch);
 #endif
+
     return GST_PAD_PROBE_OK;
 }
 
@@ -164,6 +185,48 @@ gboolean CALLBK_BusWatch(GstBus* bus, GstMessage* msg, gpointer user_data)
     return TRUE;
 }
 
+gboolean CALLBK_BusWatchEx(GstBus* bus, GstMessage* msg, gpointer user_data)
+{
+	int _ch = 0; // 1ch想定
+	RTSPCtrl* _rctrl = static_cast<RTSPCtrl*>(user_data);
+	//MediaCtx* ctx = _rctrl->ptMediaCtx;
+    //_ch = _rctrl->ch;
+
+    //MediaCtx* ctx = static_cast<MediaCtx*>(user_data);
+
+    switch (GST_MESSAGE_TYPE(msg)) {
+        case GST_MESSAGE_ERROR: {
+            GError* err = nullptr; gchar* dbg = nullptr;
+            gst_message_parse_error(msg, &err, &dbg);
+            g_printerr("Error: %s\n", err->message);
+            g_error_free(err); g_free(dbg);
+            // エラーでもリスタート
+            g_idle_add(CALLBK_RstPipeline, _rctrl->ptctx->pipeline);
+            break;
+        }
+        case GST_MESSAGE_EOS:
+            g_print("End of stream -> restart\n");
+            g_idle_add(CALLBK_RstPipeline, _rctrl->ptctx->pipeline);
+            break;
+
+        case GST_MESSAGE_ELEMENT: {
+            // udpsrc の無信号タイムアウトも拾ってリスタート
+            const GstStructure* s = gst_message_get_structure(msg);
+            if (s && gst_structure_has_name(s, "GstUDPSrcTimeout")) {
+                g_print("UDPSRC timeout -> restart\n");
+#ifdef _WIN32
+                NotifyRx(false, _ch); // ★無信号 通知
+#endif
+                g_idle_add(CALLBK_RstPipeline, _rctrl->ptctx->pipeline);
+            }
+            break;
+        }
+
+        default: break;
+    }
+    return TRUE;
+}
+
 //////////////////////////////////////////////////////////
 //
 // CALLBK_MediaCfg
@@ -171,9 +234,15 @@ gboolean CALLBK_BusWatch(GstBus* bus, GstMessage* msg, gpointer user_data)
 // さらに受信検出用の probe も付ける
 // コールバック
 //
+// ここからさらに下記の関数をコールバック登録している
+// CALLBK_RxWatch()
+// PROBE_UdpSrcBuffer()
+// CALLBK_BusWatch()
+// 
 //////////////////////////////////////////////////////////
 // user_dataは GMainLoop*でキャストしているので、勝手に拡張できない
 // 関数自体も引数の型や数を変えられない
+// ★★★★★★★★★★★★★こっちは非拡張版★★★★★★★★★★★★★★★★★ 
 void CALLBK_MediaCfg(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer user_data)
 {
     // user_data は g_signal_connect で渡した GMainLoop* として受け取る
@@ -228,7 +297,8 @@ void CALLBK_MediaCfg(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer
     ctx->pipeline = GST_ELEMENT(gst_object_ref(element)); // パイプライン参照を保持
 
     if (GstBus* bus = gst_element_get_bus(element)) {
-        gst_bus_add_watch(bus, CALLBK_BusWatch, ctx);  // ← MediaCtx* を渡す
+        gst_bus_add_watch(bus, CALLBK_BusWatchEx, ctx);  // ← MediaCtx* を渡す
+
         gst_object_unref(bus);
     }
     gst_object_unref(element);
@@ -245,8 +315,14 @@ void CALLBK_MediaCfg(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer
 /////////////////////////////////////////////////////////
 //
 // 拡張機能版 CALLBK_MediaCfg
-// user_dataには RTSPCtrl* を渡す
+// user_dataには RTSPCtrl* を渡されるようすること
+// さらにコールバック登録時に RTSPCtrl* を渡す
 //
+// ここからさらに下記の関数をコールバック登録している
+// CALLBK_RxWatch()
+// PROBE_UdpSrcBuffer()
+// CALLBK_BusWatch()
+// 
 /////////////////////////////////////////////////////////
 void CALLBK_MediaCfgEx(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer user_data)
 {
@@ -275,7 +351,11 @@ void CALLBK_MediaCfgEx(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoint
                     // PROBE_UdpSrcBuffer()は最後に受信した時刻を更新
                     // 一定時間受信が無ければOFFにする
                     ///////////////////////////////////////////////
-                    gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, PROBE_UdpSrcBuffer, nullptr, nullptr);
+                    gst_pad_add_probe(pad, 
+                        GST_PAD_PROBE_TYPE_BUFFER, 
+                        PROBE_UdpSrcBuffer, 
+                        _rctrl,
+                        nullptr);
                     gst_object_unref(pad);
                     g_object_set_data(G_OBJECT(src), "rx-probe-installed", GINT_TO_POINTER(1));
                 }
@@ -291,85 +371,36 @@ void CALLBK_MediaCfgEx(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpoint
     ///////////////////////////////////////////
     if (g_rx_watch_id == 0)
     {
+        ///////////////////////////////////////////
         // Add watch timer
         // CALLBK_RxWatch
-        g_rx_watch_id = g_timeout_add(GST_INTERVAL_PORTWATCH, CALLBK_RxWatch, nullptr); //GST_INTERVAL_PORTWATCH = 500ms
+        ///////////////////////////////////////////
+        g_rx_watch_id = g_timeout_add(
+            GST_INTERVAL_PORTWATCH, 
+            CALLBK_RxWatch, 
+            _rctrl); //GST_INTERVAL_PORTWATCH = 500ms
     }
 #endif
 
     // CALLBK_BusWatch が期待する MediaCtx* をここで作る
-    MediaCtx* ctx = g_new0(MediaCtx, 1);
-    ctx->loop = _rctrl->ptLoop;
-    ctx->pipeline = GST_ELEMENT(gst_object_ref(element)); // パイプライン参照を保持
+    _rctrl->ptctx = g_new0(MediaCtx, 1);
+    _rctrl->ptctx->loop = _rctrl->ptLoop;
+    _rctrl->ptctx->pipeline = GST_ELEMENT(gst_object_ref(element)); // パイプライン参照を保持
 
     if (GstBus* bus = gst_element_get_bus(element)) {
-        gst_bus_add_watch(bus, CALLBK_BusWatch, ctx);  // ← MediaCtx* を渡す
+		gst_bus_add_watch(bus, CALLBK_BusWatchEx, _rctrl);  // ← RTSPCtrlを渡す
         gst_object_unref(bus);
     }
     gst_object_unref(element);
 
     // media 破棄と同時に ctx を解放（保持していた pipeline も unref）
-    g_object_set_data_full(G_OBJECT(media), "media-ctx", ctx, [](gpointer p) {
+    g_object_set_data_full(G_OBJECT(media), "media-ctx", _rctrl->ptctx, [](gpointer p) {
         MediaCtx* c = static_cast<MediaCtx*>(p);
         if (c->pipeline)
             gst_object_unref(c->pipeline);
         g_free(c);
         });
 }
-
-
-//////////////////////////////////////////////////////////
-// 1回キックして数秒で切断するダミークライアント
-/*
-void KickRtspOnceAndDisconnect(GMainLoop* loop, int out_port, const std::string& channel, int timer) 
-{
-    std::ostringstream p;
-    p << "playbin uri=rtsp://127.0.0.1:" << out_port << "/" << channel
-        << " video-sink=fakesink audio-sink=fakesink";
-
-    GError* err = nullptr;
-    GstElement* pipe = gst_parse_launch(p.str().c_str(), &err);
-    if (!pipe) {
-        g_printerr("kick parse error: %s\n", err ? err->message : "unknown");
-        if (err) g_error_free(err);
-        return;
-    }
-
-    // 状態遷移・エラー監視（任意）
-    GstBus* bus = gst_element_get_bus(pipe);
-    gst_bus_add_watch(bus, CALLBK_BusWatch, loop);
-    gst_object_unref(bus);
-
-    gst_element_set_state(pipe, GST_STATE_PLAYING);
-
-    // ★ 2秒後に自動で切断（TEARDOWN 相当）
-    //g_timeout_add_seconds(30, [](gpointer data) -> gboolean {
-    g_timeout_add_seconds(timer, [](gpointer data) -> gboolean {
-        GstElement* p = static_cast<GstElement*>(data);
-        gst_element_set_state(p, GST_STATE_NULL);
-        gst_object_unref(p);
-        g_print("Dummy RTSP kick disconnected.\n");
-        return FALSE; // 1回だけ
-        }, pipe);
-}
-*/
-
-//////////////////////////////////////////////////////////
-//ダミーRTSPクライアントの起動
-/*
-void StartDummyRtspClient_old(GMainLoop* loop, int out_port, const std::string& channel) {
-    std::ostringstream p;
-    p << "playbin uri=rtsp://127.0.0.1:" << out_port << "/" << channel
-        << " video-sink=fakesink audio-sink=fakesink";
-    GError* err = nullptr;
-    GstElement* pipe = gst_parse_launch(p.str().c_str(), &err);
-    if (!pipe) { g_printerr("kick client parse error: %s\n", err ? err->message : "unknown"); if (err) g_error_free(err); return; }
-    GstBus* bus = gst_element_get_bus(pipe);
-    gst_bus_add_watch(bus, CALLBK_BusWatch, loop);
-    gst_object_unref(bus);
-    gst_element_set_state(pipe, GST_STATE_PLAYING);
-}
-*/
 
 //////////////////////////////////////////////////////////
 //ダミーRTSPクライアントの起動

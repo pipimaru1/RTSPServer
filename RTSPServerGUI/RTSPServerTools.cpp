@@ -33,6 +33,7 @@ bool RtspServerController::Start(int inPort, int outPort, const std::string& cha
     return true;
 }
 
+/*
 bool RtspServerController::StartEx(int inPort, int outPort, int _ch, const std::string& channelUtf8, HWND hwndNotify)
 {
     if (running_.load())
@@ -52,6 +53,7 @@ bool RtspServerController::StartEx(int inPort, int outPort, int _ch, const std::
 
     return true;
 }
+*/
 
 bool RtspServerController::StartExx(HWND hwndNotify)
 {

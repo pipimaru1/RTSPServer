@@ -223,6 +223,12 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             CheckDlgButton(hDlg, IDC_CHK1, receiving ? BST_CHECKED : BST_UNCHECKED);
             return (INT_PTR)TRUE;
         }
+        case WM_APP_RX_STATUS+1:
+        {
+            const bool receiving = (wParam != 0);
+            CheckDlgButton(hDlg, IDC_CHK1, receiving ? BST_CHECKED : BST_UNCHECKED);
+            return (INT_PTR)TRUE;
+        }
 
         case WM_COMMAND:
         {
@@ -241,7 +247,9 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             switch (id)
             {
                 case IDC_BTN_START1:  { IDC_BTN_START(hDlg, GAPP,  0); return (INT_PTR)TRUE; }break;
-				case IDC_BTN_START2:  { IDC_BTN_START(hDlg, GAPP,  1); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START2:  { 
+                    IDC_BTN_START(hDlg, GAPP,  1); 
+                    return (INT_PTR)TRUE; }break;
 				case IDC_BTN_START3:  { IDC_BTN_START(hDlg, GAPP,  2); return (INT_PTR)TRUE; }break;
 				case IDC_BTN_START4:  { IDC_BTN_START(hDlg, GAPP,  3); return (INT_PTR)TRUE; }break;
 				case IDC_BTN_START5:  { IDC_BTN_START(hDlg, GAPP,  4); return (INT_PTR)TRUE; }break;

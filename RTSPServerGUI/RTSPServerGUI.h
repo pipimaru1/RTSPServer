@@ -16,7 +16,7 @@ public:
     ~RtspServerController();
 
     bool Start(int inPort, int outPort, const std::string& channelUtf8, HWND hwndNotify);
-    bool StartEx(int inPort, int outPort, int _ch, const std::string& channelUtf8, HWND hwndNotify);
+    //bool StartEx(int inPort, int outPort, int _ch, const std::string& channelUtf8, HWND hwndNotify);
 	bool StartExx(HWND hwndNotify); //rCtrl‚Ì“à—e‚ðŽg‚¤”Å
 
     void Stop();

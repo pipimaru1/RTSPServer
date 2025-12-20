@@ -65,6 +65,7 @@ public:
 	int ch = 0; // 0始まりのチャンネル番号
 
 	PTMLOOP	ptLoop = nullptr;
+	MediaCtx* ptctx = nullptr;
 	//   std::atomic<gint64> g_last_rx_us{ 0 };              // ★追加：最後に受信した時刻（μs）
 	//   const gint64 g_rx_timeout_us = 5 * G_USEC_PER_SEC;  // ★追加：受信が途切れたとみなす時間（udpsrc timeout と同じ 5秒推奨）
 	//   guint g_rx_watch_id = 0;                            // ★追加：監視タイマID（1ch想定）
