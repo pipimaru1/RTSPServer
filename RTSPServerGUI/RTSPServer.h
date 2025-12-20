@@ -40,21 +40,42 @@
 
 
 //////////////////////////////////////////////////////////
+// 
 // メディアごとのコンテキスト
+// 
+//////////////////////////////////////////////////////////
 struct MediaCtx {
     GMainLoop* loop;
     GstElement* pipeline; // gst_rtsp_media_get_element() の返り値
 };
-// 2025年12月19日
-// media_configure_cb()で生成　コールバック CALLBK_BusWatch()に渡る
-// prewarm_media_without_client()で生成 コールバック CALLBK_BusWatch()に渡る
 
+/////////////////////////////////////////////////////////
+//
+// RTSPサーバーの制御クラス
+//
+/////////////////////////////////////////////////////////
+typedef GMainLoop* PTMLOOP;   // PTMLOOP は「GMainLoop*」の別名
 
+class RTSPCtrl
+{
+public:
+	int in_port = 0;
+	int	out_port = 0;
+	std::string channel_name; //"default"など
+	int ch = 0; // 0始まりのチャンネル番号
+
+	PTMLOOP	ptLoop = nullptr;
+	//   std::atomic<gint64> g_last_rx_us{ 0 };              // ★追加：最後に受信した時刻（μs）
+	//   const gint64 g_rx_timeout_us = 5 * G_USEC_PER_SEC;  // ★追加：受信が途切れたとみなす時間（udpsrc timeout と同じ 5秒推奨）
+	//   guint g_rx_watch_id = 0;                            // ★追加：監視タイマID（1ch想定）
+};
 
 // 非同期で安全にリスタート（メインループスレッドで実行）
 static gboolean CALLBK_RstPipeline(gpointer data);
 
-int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
+//int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
+int OpenRTSPServer(PTMLOOP& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
+int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[]);
 
 #define DEFAULT_DISABLE_RTCP FALSE
 #define GST_INTERVAL_PORTWATCH 500 // ms
@@ -65,19 +86,3 @@ constexpr UINT WM_APP_RX_STATUS = WM_APP + 102; // wParam: 1=受信中, 0=無信号
 void SetGuiNotifyHwnd(HWND hwnd);
 #endif
 
-class RTSPController
-{
-public:
- //   int in_port = 0;
- //   int	out_port = 0;
-	//std::string channel_name; //"default"など
-	//int ch = 0; // 0始まりのチャンネル番号
-
- //   std::atomic<gint64> g_last_rx_us{ 0 };              // ★追加：最後に受信した時刻（μs）
- //   const gint64 g_rx_timeout_us = 5 * G_USEC_PER_SEC;  // ★追加：受信が途切れたとみなす時間（udpsrc timeout と同じ 5秒推奨）
- //   guint g_rx_watch_id = 0;                            // ★追加：監視タイマID（1ch想定）
-
-	
-	void CALLBK_MediaCfg(GstRTSPMediaFactory* factory, GstRTSPMedia* media, gpointer user_data);
-
-};

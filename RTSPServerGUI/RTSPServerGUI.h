@@ -14,14 +14,18 @@ public:
     ~RtspServerController();
 
     bool Start(int inPort, int outPort, const std::string& channelUtf8, HWND hwndNotify);
-    //bool Start(GST_RTSP_SVPARAMS& _gsrv, HWND hwndNotify);
-
+    bool StartEx(int inPort, int outPort, int _ch, const std::string& channelUtf8, HWND hwndNotify);
+    
     void Stop();
 
     bool IsRunning() const { return running_.load(); }
 
 private:
     void ThreadMain(int inPort, int outPort, std::string channelUtf8);
+    void ThreadMainEx(int inPort, int outPort, std::string channelUtf8);
+
+    void ThreadMainExx();
+
     //void ThreadMain(GST_RTSP_SVPARAMS& _gsrv, std::string channelUtf8);
     //void ThreadMainGsrv(GST_RTSP_SVPARAMS& _gsrv);
 
@@ -30,6 +34,8 @@ private:
     std::thread       th_;
     GMainLoop* loop_{ nullptr };
     HWND              hwndNotify_{ nullptr };
+
+	RTSPCtrl        rCtrl; //GMainLoop‚ðŠÜ‚Þ 
 };
 
 

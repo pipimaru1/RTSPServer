@@ -24,8 +24,7 @@
 
 #define MAX_LOADSTRING 100
 
-RtspServerController g_server_;
-
+//RtspServerController g_server_;
 //RtspServerController gGstSv[MAXCH];
 //std::vector<RtspServerController > gGstSv[MAXCH];
 std::array<RtspServerController, MAXCH> gGstSv;
