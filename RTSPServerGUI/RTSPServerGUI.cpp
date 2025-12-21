@@ -260,6 +260,13 @@ inline std::wstring string2wstring(const std::string& s)
     return result;
 }
 
+// 好きな色にするための値（必要なら後で動的に変更してOK）
+COLORREF ONAIR_GRAY = RGB(128, 128, 128);
+COLORREF ONAIR_RED = RGB(240, 30, 0); 
+bool g_onair[32] = {};
+HBRUSH g_hbrOnAirRed = CreateSolidBrush(ONAIR_RED);
+HBRUSH g_hbrOnAirGray = CreateSolidBrush(ONAIR_GRAY);
+
 void WM_APPRXSTATUS(
     HWND _hDlg,
     WPARAM wParam,
@@ -277,6 +284,11 @@ void WM_APPRXSTATUS(
 	wchar_t buf[64]{};
 	_snwprintf_s(buf, _TRUNCATE, L"%d kbps", _bitrate);
 	SetDlgItemTextW(_hDlg, IDC_BITRATE_1 + _ch, buf);
+
+	//色を変える 変えるのはWindowProcのWM_CTLCOLORSTATIC内
+    g_onair[_ch] = receiving; // ★ここで状態を保存する
+    HWND hCtl = GetDlgItem(_hDlg, IDC_ONAIR_1 + _ch);
+    InvalidateRect(hCtl, nullptr, TRUE);
 
     // sender ip:port 表示
     std::string ip;
@@ -377,7 +389,29 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		case WM_APP_RX_STATUS + 29: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK30, IDC_SRCIP_30, IDC_BITRATE_30, 29); }  break;
 		case WM_APP_RX_STATUS + 30: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK31, IDC_SRCIP_31, IDC_BITRATE_31, 30); }  break;
 		case WM_APP_RX_STATUS + 31: { WM_APPRXSTATUS(hDlg, wParam, GAPP, IDC_CHK32, IDC_SRCIP_32, IDC_BITRATE_32, 31); }  break;
-
+        
+        case WM_CTLCOLORSTATIC: {
+            HDC  hdc = (HDC)wParam;
+            HWND hCtl = (HWND)lParam;
+            const int id = GetDlgCtrlID(hCtl);
+            if (id >= IDC_ONAIR_1 && id < IDC_ONAIR_1 + 32) {
+                const int ch = id - IDC_ONAIR_1;
+                if (g_onair[ch]) {
+                    SetTextColor(hdc, RGB(255, 255, 255)); // 文字色
+                    SetBkColor(hdc, ONAIR_RED);            // 背景色（必ず同じ色）
+                    SetBkMode(hdc, OPAQUE);
+                    return (INT_PTR)g_hbrOnAirRed;         // ★このブラシが背景になる
+                }
+                else {
+                    SetTextColor(hdc, RGB(0, 0, 0));
+                    SetBkColor(hdc, ONAIR_GRAY);
+                    SetBkMode(hdc, OPAQUE);
+                    return (INT_PTR)g_hbrOnAirGray;
+                }
+            }
+            break;
+        }break;
+                              
         case WM_COMMAND:
         {
             const int id = LOWORD(wParam);
