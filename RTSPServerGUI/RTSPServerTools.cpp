@@ -185,7 +185,7 @@ void SaveSettings(
     }
 }
 
-void LoadSettings(HWND hDlg, UINT _IDC_EDIT_PORTIN, UINT _IDC_EDIT_PORTOUT, UINT _IDC_EDIT_PORTNAME)
+void LoadSettings(HWND hDlg, UINT _IDC_EDIT_PORTIN, UINT _IDC_EDIT_PORTOUT, UINT _IDC_EDIT_PORTNAME, UINT _IDC_ )
 {
     const std::wstring ini = GetIniPath();
 
@@ -281,4 +281,185 @@ bool GetIntFromEdit(HWND hDlg, int id, int& outValue)
     if (v <= 0) return false;
     outValue = v;
     return true;
+}
+
+/*
+//////////////////////////////////////////////////////////
+// 実行中のシステムのIPアドレス(IPv4/IPv6)を取得して返す関数
+std::vector<std::string> getLocalIPAddresses()
+{
+    // 戻り値用のベクタ
+    std::vector<std::string> addresses;
+
+    // Winsockの初期化
+    WSADATA wsaData;
+    int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (result != 0) {
+        std::cerr << "WSAStartup failed: " << result << std::endl;
+        return addresses;  // 空のベクタを返す
+    }
+
+    // ホスト名(コンピュータ名)を取得
+    char hostname[NI_MAXHOST];
+    if (gethostname(hostname, NI_MAXHOST) == SOCKET_ERROR) {
+        std::cerr << "gethostname failed. Error: " << WSAGetLastError() << std::endl;
+        WSACleanup();
+        return addresses;  // 空のベクタを返す
+    }
+
+    // アドレス情報を取得 (IPv4, IPv6問わず取得)
+    struct addrinfo hints = { 0 };
+    hints.ai_family = AF_UNSPEC;    // IPv4 / IPv6 両方取得
+    hints.ai_socktype = SOCK_STREAM;  // TCP(SOCK_STREAM)を指定(UDPならSOCK_DGRAMなど)
+    hints.ai_flags = AI_PASSIVE;   // 「任意」フラグ(自マシンに割り当てられたIPの情報を取得)
+
+    struct addrinfo* res = nullptr;
+    result = getaddrinfo(hostname, nullptr, &hints, &res);
+    if (result != 0) {
+        std::cerr << "getaddrinfo failed. Error: " << result << std::endl;
+        WSACleanup();
+        return addresses;  // 空のベクタを返す
+    }
+
+    // 取得したアドレスリストを走査して文字列に変換し、ベクタに格納
+    for (auto ptr = res; ptr != nullptr; ptr = ptr->ai_next) {
+        char ipStr[INET6_ADDRSTRLEN] = { 0 };
+
+        if (ptr->ai_family == AF_INET) {
+            // IPv4
+            sockaddr_in* ipv4 = reinterpret_cast<sockaddr_in*>(ptr->ai_addr);
+            inet_ntop(AF_INET, &(ipv4->sin_addr), ipStr, sizeof(ipStr));
+            addresses.push_back(ipStr);
+        }
+        else if (ptr->ai_family == AF_INET6) {
+            // IPv6
+            sockaddr_in6* ipv6 = reinterpret_cast<sockaddr_in6*>(ptr->ai_addr);
+            inet_ntop(AF_INET6, &(ipv6->sin6_addr), ipStr, sizeof(ipStr));
+            addresses.push_back(ipStr);
+        }
+    }
+
+    // 後片付け
+    freeaddrinfo(res);
+    WSACleanup();
+
+    // 取得したIPアドレス一覧を返す
+    return addresses;
+}
+*/
+bool SetClipboardTextW(HWND owner, const std::wstring& text)
+{
+    if (!OpenClipboard(owner)) return false;
+
+    EmptyClipboard();
+
+    const SIZE_T bytes = (text.size() + 1) * sizeof(wchar_t);
+    HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, bytes);
+    if (!hMem) {
+        CloseClipboard();
+        return false;
+    }
+
+    void* p = GlobalLock(hMem);
+    if (!p) {
+        GlobalFree(hMem);
+        CloseClipboard();
+        return false;
+    }
+
+    memcpy(p, text.c_str(), bytes);
+    GlobalUnlock(hMem);
+
+    if (!SetClipboardData(CF_UNICODETEXT, hMem)) {
+        GlobalFree(hMem);
+        CloseClipboard();
+        return false;
+    }
+
+    // 成功したら hMem の所有権は OS 側へ移る（GlobalFree しない）
+    CloseClipboard();
+    return true;
+}
+
+std::wstring Utf8ToW(const std::string& s)
+{
+    if (s.empty()) return L"";
+    const int n = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, nullptr, 0);
+    if (n <= 0) return L"";
+    std::wstring w;
+    w.resize(n - 1);
+    MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, &w[0], n);
+    return w;
+}
+
+std::string MakeChannelSuffix(const std::string& channel_name)
+{
+    // 例: "default" -> "/default"
+    //     "/default" -> "/default"
+    if (channel_name.empty()) return std::string("/");
+    if (channel_name[0] == '/') return channel_name;
+    return std::string("/") + channel_name;
+}
+
+void FillUrlCombo(HWND hDlg, int combo_id, int out_port, const std::string& channel_name)
+{
+    HWND hCmb = GetDlgItem(hDlg, combo_id);
+    if (!hCmb) return;
+
+    SendMessageW(hCmb, CB_RESETCONTENT, 0, 0);
+
+    const std::string suffix = MakeChannelSuffix(channel_name);
+
+    // 127.0.0.1 は必ず入れる
+    {
+        std::string url = "rtsp://127.0.0.1:" + std::to_string(out_port) + suffix;
+        std::wstring wurl = Utf8ToW(url);
+        SendMessageW(hCmb, CB_ADDSTRING, 0, (LPARAM)wurl.c_str());
+    }
+
+    // ローカルIP一覧
+    const std::vector<std::string> ipList = getLocalIPAddresses();
+
+#if 1
+    for (const std::string& ip : ipList) {
+        // 127.0.0.1 と同じなら重複回避
+        if (ip == "127.0.0.1") 
+            continue;
+        std::string url = "rtsp://" + ip + ":" + std::to_string(out_port) + suffix;
+        std::wstring wurl = Utf8ToW(url);
+        SendMessageW(hCmb, CB_ADDSTRING, 0, (LPARAM)wurl.c_str());
+    }
+#else
+    for (auto it = ipList.rbegin(); it != ipList.rend(); ++it) {
+        const std::string& ip = *it;
+        if (ip == "127.0.0.1")
+            continue;
+        std::string url = "rtsp://" + ip + ":" + std::to_string(out_port) + suffix;
+        std::wstring wurl = Utf8ToW(url);
+        SendMessageW(hCmb, CB_ADDSTRING, 0, (LPARAM)wurl.c_str());
+    }
+#endif
+
+    // 先頭を選択しておく（必要なら）
+    SendMessageW(hCmb, CB_SETCURSEL, 0, 0);
+}
+
+//選択されたURLをクリップボードへ（CBN_SELCHANGE）
+void CopySelectedComboTextToClipboard(HWND hDlg, int combo_id)
+{
+    HWND hCmb = GetDlgItem(hDlg, combo_id);
+    if (!hCmb) return;
+
+    const LRESULT sel = SendMessageW(hCmb, CB_GETCURSEL, 0, 0);
+    if (sel == CB_ERR) return;
+
+    const LRESULT len = SendMessageW(hCmb, CB_GETLBTEXTLEN, (WPARAM)sel, 0);
+    if (len == CB_ERR || len <= 0) return;
+
+    std::wstring text;
+    text.resize((size_t)len);
+
+    SendMessageW(hCmb, CB_GETLBTEXT, (WPARAM)sel, (LPARAM)&text[0]);
+
+    SetClipboardTextW(hDlg, text);
 }

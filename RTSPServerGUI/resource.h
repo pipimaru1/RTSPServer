@@ -13,9 +13,8 @@
 #define IDC_RTSPSERVERGUI               109
 #define IDR_MAINFRAME                   128
 #define IDD_MAIN                        129
-#define IDC_STATIC                      -1
 #define IDC_BTN_START_ALL               130
-
+#define IDC_COMBO1                      1007
 #define IDC_BTN_START1                  1101
 #define IDC_BTN_START2                  1102
 #define IDC_BTN_START3                  1103
@@ -48,7 +47,6 @@
 #define IDC_BTN_START30                 1130
 #define IDC_BTN_START31                 1131
 #define IDC_BTN_START32                 1132
-
 #define IDC_BTN_STOP1                   1201
 #define IDC_BTN_STOP2                   1202
 #define IDC_BTN_STOP3                   1203
@@ -82,7 +80,6 @@
 #define IDC_BTN_STOP31                  1231
 #define IDC_BTN_STOP32                  1232
 #define IDC_BTN_STOP_ALL                1233
-
 #define IDC_EDIT_PORTIN1                1301
 #define IDC_EDIT_PORTIN2                1302
 #define IDC_EDIT_PORTIN3                1303
@@ -115,7 +112,6 @@
 #define IDC_EDIT_PORTIN30               1330
 #define IDC_EDIT_PORTIN31               1331
 #define IDC_EDIT_PORTIN32               1332
-
 #define IDC_EDIT_PORTOUT1               1401
 #define IDC_EDIT_PORTOUT2               1402
 #define IDC_EDIT_PORTOUT3               1403
@@ -148,7 +144,6 @@
 #define IDC_EDIT_PORTOUT30              1430
 #define IDC_EDIT_PORTOUT31              1431
 #define IDC_EDIT_PORTOUT32              1432
-
 #define IDC_CHK1                        1501
 #define IDC_CHK2                        1502
 #define IDC_CHK3                        1503
@@ -181,7 +176,6 @@
 #define IDC_CHK30                       1530
 #define IDC_CHK31                       1531
 #define IDC_CHK32                       1532
-
 #define IDC_EDIT_PORTNAME1              1601
 #define IDC_EDIT_PORTNAME2              1602
 #define IDC_EDIT_PORTNAME3              1603
@@ -214,7 +208,6 @@
 #define IDC_EDIT_PORTNAME30             1630
 #define IDC_EDIT_PORTNAME31             1631
 #define IDC_EDIT_PORTNAME32             1632
-
 #define IDC_SRCIP_1                     1701
 #define IDC_SRCIP_2                     1702
 #define IDC_SRCIP_3                     1703
@@ -247,7 +240,6 @@
 #define IDC_SRCIP_30                    1730
 #define IDC_SRCIP_31                    1731
 #define IDC_SRCIP_32                    1732
-
 #define IDC_BITRATE_1                   1801
 #define IDC_BITRATE_2                   1802
 #define IDC_BITRATE_3                   1803
@@ -280,9 +272,39 @@
 #define IDC_BITRATE_30                  1830
 #define IDC_BITRATE_31                  1831
 #define IDC_BITRATE_32                  1832
-
-#define IDC_CMB_BCFRASE_1               1932
-
+#define IDC_CMB_BCFRASE_1               1901
+#define IDC_CMB_BCFRASE_2               1902
+#define IDC_CMB_BCFRASE_3               1903
+#define IDC_CMB_BCFRASE_4               1904
+#define IDC_CMB_BCFRASE_5               1921
+#define IDC_CMB_BCFRASE_6               1922
+#define IDC_CMB_BCFRASE_7               1923
+#define IDC_CMB_BCFRASE_8               1924
+#define IDC_CMB_BCFRASE_9               1949
+#define IDC_CMB_BCFRASE_10              1950
+#define IDC_CMB_BCFRASE_11              1951
+#define IDC_CMB_BCFRASE_12              1952
+#define IDC_CMB_BCFRASE_13              1953
+#define IDC_CMB_BCFRASE_14              1954
+#define IDC_CMB_BCFRASE_15              1955
+#define IDC_CMB_BCFRASE_16              1956
+#define IDC_CMB_BCFRASE_17              1957
+#define IDC_CMB_BCFRASE_18              1958
+#define IDC_CMB_BCFRASE_19              1959
+#define IDC_CMB_BCFRASE_20              1960
+#define IDC_CMB_BCFRASE_21              1961
+#define IDC_CMB_BCFRASE_22              1962
+#define IDC_CMB_BCFRASE_23              1963
+#define IDC_CMB_BCFRASE_24              1964
+#define IDC_CMB_BCFRASE_25              1965
+#define IDC_CMB_BCFRASE_26              1966
+#define IDC_CMB_BCFRASE_27              1967
+#define IDC_CMB_BCFRASE_28              1968
+#define IDC_CMB_BCFRASE_29              1969
+#define IDC_CMB_BCFRASE_30              1970
+#define IDC_CMB_BCFRASE_31              1971
+#define IDC_CMB_BCFRASE_32              1972
+#define IDC_STATIC                      -1
 
 // Next default values for new objects
 // 
@@ -291,7 +313,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        130
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1007
+#define _APS_NEXT_CONTROL_VALUE         1008
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

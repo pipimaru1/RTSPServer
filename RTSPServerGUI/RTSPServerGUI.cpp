@@ -74,7 +74,44 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     // ret == -1 のとき GetLastError() で原因確認
     return (int)ret;
 }
+////////////////////////////////////////////////////////////////////////////////
+//cmmbno box に URL をセット
+//    FillUrlCombo(hDlg, IDC_CMB_BCFRASE_1, int out_port, const std::string & channel_name)
 
+void IDC_SET_CMBBOX_URL(
+    HWND _hDlg,
+    UINT _IDC_CMB_BCFRASE,
+    UINT _IDC_EDIT_PORTOUT,
+    UINT _IDC_EDIT_PORTNAME
+) {
+    int outPort = 0;
+    if (!GetIntFromEdit(_hDlg, _IDC_EDIT_PORTOUT, outPort) ||
+        outPort < 1 ||
+        outPort > 65535)
+    {
+        MessageBoxW(_hDlg, L"ポート番号が不正です。(1～65535)", L"入力エラー", MB_ICONERROR);
+        return;
+    }
+
+    wchar_t nameW[256]{};
+    GetDlgItemTextW(_hDlg, _IDC_EDIT_PORTNAME, nameW, 256);
+    std::wstring channelW = nameW;
+    if (channelW.empty())
+    {
+        MessageBoxW(_hDlg, L"ストリーム名（Channel）が空です。", L"入力エラー", MB_ICONERROR);
+        return;
+    }
+
+    FillUrlCombo(
+        _hDlg,
+        _IDC_CMB_BCFRASE,
+        outPort,
+        WideToUtf8(channelW)
+    );
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
 bool IDC_BTN_START(
     HWND _hDlg,
     RtspServerController& _g_server,
@@ -141,6 +178,7 @@ bool IDC_BTN_START(
     );
     return true;
 }
+
 ///////////////////////////////////////////////////////////////////////////////
 bool IDC_BTN_START(
     HWND _hDlg,
@@ -148,6 +186,14 @@ bool IDC_BTN_START(
     UINT _ch
 ){
 //	gGstSv[_ch].rCtrl.ch = _ch; // チャンネル番号をセット
+
+//URLコンボボックス更新
+    IDC_SET_CMBBOX_URL(
+        _hDlg,
+        GAPP.IDC_CMB_BCFRASE[_ch],
+        GAPP.IDC_EDIT_PORTOUT[_ch],
+        GAPP.IDC_EDIT_PORTNAME[_ch]
+    );
 
     return IDC_BTN_START(
         _hDlg,
@@ -264,6 +310,18 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             SetRunningUi(hDlg, false, GAPP);
             // タイトルを設定（不要なら消してOK）
             //SetWindowTextW(hDlg, szTitle);
+
+            for (int i = 0; i < GAPP.IDC_CMB_BCFRASE.size(); ++i)
+            {
+                IDC_SET_CMBBOX_URL(
+                    hDlg,
+                    GAPP.IDC_CMB_BCFRASE[i],
+                    GAPP.IDC_EDIT_PORTOUT[i],
+                    GAPP.IDC_EDIT_PORTNAME[i]
+                );
+            }
+
+
             return (INT_PTR)TRUE;
         }break;
 /*
@@ -333,6 +391,15 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 return TRUE; // ここで食う
             }
 			//break; breakしない
+
+            if (code == CBN_SELCHANGE) {
+                // 32chぶんまとめて処理
+                if (id >= IDC_CMB_BCFRASE_1 && id < (IDC_CMB_BCFRASE_1 + MAXCH)) {
+                    CopySelectedComboTextToClipboard(hDlg, (int)id);
+                    return (INT_PTR)TRUE;
+                }
+            }
+            //break; breakしない
 
             switch (id)
             {

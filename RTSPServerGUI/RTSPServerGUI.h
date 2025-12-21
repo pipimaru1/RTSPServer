@@ -36,15 +36,15 @@ private:
 
 };
 
-
 std::string WideToUtf8(const std::wstring& ws);
 bool GetIntFromEdit(HWND hDlg, int id, int& outValue);
+std::vector<std::string> getLocalIPAddresses();
+bool SetClipboardTextW(HWND owner, const std::wstring& text);
+void FillUrlCombo(HWND hDlg, int combo_id, int out_port, const std::string& channel_name);
+void CopySelectedComboTextToClipboard(HWND hDlg, int combo_id);
 
-///////////////////////////////////////////////
-// 
-// 設定関連の定数・構造体
-//
-///////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////
 struct APP_SETTINGS
 {
 	int size = MAXCH; // チャンネル数
@@ -120,6 +120,17 @@ struct APP_SETTINGS
         IDC_CHK25,IDC_CHK26,IDC_CHK27,IDC_CHK28,
         IDC_CHK29,IDC_CHK30,IDC_CHK31,IDC_CHK32
 	};
+    std::array<UINT, MAXCH> IDC_CMB_BCFRASE={
+		IDC_CMB_BCFRASE_1,IDC_CMB_BCFRASE_2,IDC_CMB_BCFRASE_3,IDC_CMB_BCFRASE_4,
+		IDC_CMB_BCFRASE_5,IDC_CMB_BCFRASE_6,IDC_CMB_BCFRASE_7,IDC_CMB_BCFRASE_8,
+		IDC_CMB_BCFRASE_9,IDC_CMB_BCFRASE_10,IDC_CMB_BCFRASE_11,IDC_CMB_BCFRASE_12,
+		IDC_CMB_BCFRASE_13,IDC_CMB_BCFRASE_14,IDC_CMB_BCFRASE_15,IDC_CMB_BCFRASE_16,
+		IDC_CMB_BCFRASE_17,IDC_CMB_BCFRASE_18,IDC_CMB_BCFRASE_19,IDC_CMB_BCFRASE_20,
+		IDC_CMB_BCFRASE_21,IDC_CMB_BCFRASE_22,IDC_CMB_BCFRASE_23,IDC_CMB_BCFRASE_24,
+		IDC_CMB_BCFRASE_25,IDC_CMB_BCFRASE_26,IDC_CMB_BCFRASE_27,IDC_CMB_BCFRASE_28,
+		IDC_CMB_BCFRASE_29,IDC_CMB_BCFRASE_30,IDC_CMB_BCFRASE_31,IDC_CMB_BCFRASE_32
+	};
+
 
     std::array<UINT, MAXCH> _DEF_PORTIN = {
 		5004,5006,5008,5010,
