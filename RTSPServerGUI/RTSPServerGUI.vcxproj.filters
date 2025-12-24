@@ -63,5 +63,14 @@
     <Image Include="robot-head_128.ico">
       <Filter>リソース ファイル</Filter>
     </Image>
+    <Image Include="icon1.ico">
+      <Filter>リソース ファイル</Filter>
+    </Image>
+    <Image Include="robot-head_64.ico">
+      <Filter>リソース ファイル</Filter>
+    </Image>
+    <Image Include="robot-head_32.ico">
+      <Filter>リソース ファイル</Filter>
+    </Image>
   </ItemGroup>
 </Project>

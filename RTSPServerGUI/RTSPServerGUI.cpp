@@ -327,6 +327,29 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
     {
         case WM_INITDIALOG:
         {
+			// アイコンの設定
+            HICON hIconBig = (HICON)LoadImageW(
+                GetModuleHandleW(nullptr),
+                MAKEINTRESOURCEW(IDI_ROBOT128),
+                IMAGE_ICON,
+                GetSystemMetrics(SM_CXICON),
+                GetSystemMetrics(SM_CYICON),
+                LR_DEFAULTCOLOR);
+
+            HICON hIconSmall = (HICON)LoadImageW(
+                GetModuleHandleW(nullptr),
+                MAKEINTRESOURCEW(IDI_ROBOT64),
+                IMAGE_ICON,
+                GetSystemMetrics(SM_CXSMICON),
+                GetSystemMetrics(SM_CYSMICON),
+                LR_DEFAULTCOLOR);
+
+            // 大アイコン（Alt+Tab、タスクバー等）
+            SendMessageW(hDlg, WM_SETICON, ICON_BIG, (LPARAM)hIconBig);
+            // 小アイコン（タイトルバー）
+            SendMessageW(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
+            //アイコンの設定 ここまで
+
             LoadSettings(hDlg, GAPP);
             SetRunningUi(hDlg, false, GAPP);
             // タイトルを設定（不要なら消してOK）

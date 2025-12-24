@@ -159,7 +159,10 @@
     <ResourceCompile Include="RTSPServerGUI.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="icon1.ico" />
     <Image Include="robot-head_128.ico" />
+    <Image Include="robot-head_32.ico" />
+    <Image Include="robot-head_64.ico" />
     <Image Include="RTSPServerGUI.ico" />
     <Image Include="small.ico" />
   </ItemGroup>
