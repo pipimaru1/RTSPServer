@@ -58,6 +58,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     hInst = hInstance;
 
+    //アイコンの登録
+    HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ROBOT128));
+    if (hIcon)
+    {
+        // アイコンを登録
+        SendMessage(HWND_BROADCAST, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+        SendMessage(HWND_BROADCAST, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+    }
+
     // タイトル文字列（必要ならダイアログの SetWindowText に使う）
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 

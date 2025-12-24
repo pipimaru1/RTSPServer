@@ -14,6 +14,7 @@
 #define IDR_MAINFRAME                   128
 #define IDD_MAIN                        129
 #define IDC_BTN_START_ALL               130
+#define IDI_ROBOT128                    130
 #define IDC_COMBO1                      1007
 #define IDC_BTN_START1                  1101
 #define IDC_BTN_START2                  1102
@@ -347,7 +348,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        130
+#define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1008
 #define _APS_NEXT_SYMED_VALUE           110
