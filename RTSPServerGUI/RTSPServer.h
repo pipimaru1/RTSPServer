@@ -69,7 +69,11 @@ public:
 	int ch = 0; // 0始まりのチャンネル番号
 
 	PTMLOOP	ptLoop = nullptr;
-	MediaCtx* ptctx = nullptr;
+
+	guint ServerID = 0; // gst_rtsp_server_attach() の返り値
+
+	// パイプラインの参照（gst_rtsp_media_get_element() の返り値）
+	MediaCtx* ptMcx = nullptr;
 	std::atomic<bool> g_rx{ false };	// 受信中かどうか
 	std::atomic<gint64> g_last_rx_us{ 0 };              // ★追加：最後に受信した時刻（μs）
 	//   const gint64 g_rx_timeout_us = 5 * G_USEC_PER_SEC;  // ★追加：受信が途切れたとみなす時間（udpsrc timeout と同じ 5秒推奨）
@@ -85,22 +89,20 @@ public:
 	std::string src_ip;     // UTF-8
 	uint16_t    src_port = 0;
 
-
+	//GstElement* pipeline = nullptr;  
 };
 
 // 非同期で安全にリスタート（メインループスレッドで実行）
 static gboolean CALLBK_RstPipeline(gpointer data);
 
 //int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
-int OpenRTSPServer(PTMLOOP& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
+//int OpenRTSPServer(PTMLOOP& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
 int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[]);
 
 #define DEFAULT_DISABLE_RTCP FALSE
 #define GST_INTERVAL_PORTWATCH 500 // ms
 
-#ifdef _WIN32
 #include <Windows.h>
 constexpr UINT WM_APP_RX_STATUS = WM_APP + 102; // wParam: 1=受信中, 0=無信号
 void SetGuiNotifyHwnd(HWND hwnd);
-#endif
 

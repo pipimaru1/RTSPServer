@@ -17,6 +17,7 @@ RtspServerController::~RtspServerController()
 // RTSPサーバーを開始
 // WinProcのIDC_BTN_START から呼ばれるのはこれ
 // RtspServerControllerは　gGstSv[ch]の形で複数インスタンがある。
+#ifdef USE_OLD_VERSION
 bool RtspServerController::Start(int inPort, int outPort, const std::string& channelUtf8, HWND hwndNotify)
 {
     if (running_.load()) 
@@ -32,7 +33,7 @@ bool RtspServerController::Start(int inPort, int outPort, const std::string& cha
 
     return true;
 }
-
+#endif
 
 bool RtspServerController::StartExx(HWND hwndNotify)
 {
@@ -61,6 +62,18 @@ void RtspServerController::Stop()
             g_main_context_wakeup(ctx);
         }
     }
+	//rCtrl.g_rx_watch_id が0になるまで待つ
+    while (rCtrl.g_rx_watch_id != 0)
+    {
+        //0.1秒
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+
+    //Onair表示を灰色に戻す パイプラインから通知が来ないので手動で再描画をコール
+	g_onair[rCtrl.ch] = false;
+    HWND hCtl = GetDlgItem(hwndNotify_, IDC_ONAIR_1 + rCtrl.ch);
+    InvalidateRect(hCtl, nullptr, TRUE);
+    UpdateWindow(hwndNotify_); // まとめて更新
 
     if (th_.joinable())
         th_.join();
@@ -78,6 +91,7 @@ void RtspServerController::Stop()
 //////////////////////////////////////////////////////////
 // RTSPサーバースレッドのメイン
 //////////////////////////////////////////////////////////
+#ifdef USE_OLD_VERSION
 void RtspServerController::ThreadMain(int inPort, int outPort, std::string channelUtf8)
 {
     // OpenRTSPServer が g_option_context_parse を呼ぶので、ダミー argv を用意
@@ -97,7 +111,7 @@ void RtspServerController::ThreadMain(int inPort, int outPort, std::string chann
 
     // running_ は Stop() 側で最終確定します（ここでは触らない）
 }
-
+#endif
 //////////////////////////////////////////////////////////
 // RTSPサーバースレッドのメイン
 // 

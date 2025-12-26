@@ -41,7 +41,9 @@ static gboolean restart_pipeline_idle(gpointer data) {
     return FALSE; // 一回だけ
 }
 
+#ifdef USE_OLD_VERSION
 int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
+#endif
 //テスト用HLSサーバー
 //int OpenHLSServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
 

@@ -6,6 +6,7 @@
 
 struct _GMainLoop;
 typedef struct _GMainLoop GMainLoop;
+extern bool g_onair[32];
 
 class RtspServerController
 {
@@ -15,14 +16,16 @@ public:
     RtspServerController();
     ~RtspServerController();
 
-    bool Start(int inPort, int outPort, const std::string& channelUtf8, HWND hwndNotify);
+    //bool Start(int inPort, int outPort, const std::string& channelUtf8, HWND hwndNotify);
 	bool StartExx(HWND hwndNotify); //rCtrl‚Ì“à—e‚ðŽg‚¤”Å
 
     void Stop();
     bool IsRunning() const { return running_.load(); }
 
 private:
+#ifdef USE_OLD_VERSION
     void ThreadMain(int inPort, int outPort, std::string channelUtf8);
+#endif
     void ThreadMainExx();
 
     //void ThreadMain(GST_RTSP_SVPARAMS& _gsrv, std::string channelUtf8);

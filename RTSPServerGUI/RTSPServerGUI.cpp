@@ -47,6 +47,14 @@ WCHAR szTitle[MAX_LOADSTRING];                  // タイトル バーのテキ�
 INT_PTR CALLBACK MainDlgProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 
+// 好きな色にするための値（必要なら後で動的に変更してOK）
+COLORREF ONAIR_GRAY = RGB(128, 128, 128);
+COLORREF ONAIR_RED = RGB(240, 30, 0);
+bool g_onair[32] = {};
+HBRUSH g_hbrOnAirRed = CreateSolidBrush(ONAIR_RED);
+HBRUSH g_hbrOnAirGray = CreateSolidBrush(ONAIR_GRAY);
+
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
     _In_ LPWSTR    lpCmdLine,
@@ -236,7 +244,10 @@ void BTN_STOP(
         _IDC_EDIT_PORTOUT,
         _IDC_EDIT_PORTNAME
         );
+
     CheckDlgButton(_hDlg, _IDC_CHK, BST_UNCHECKED);
+
+    
 }
 
 void BTN_STOP(
@@ -254,6 +265,15 @@ void BTN_STOP(
         _GAPP.IDC_EDIT_PORTNAME[_ch],
         _GAPP.IDC_CHK[_ch]
 	);
+
+	//Onair表示を灰色に戻す パイプラインから通知が来ないので手動で再描画をコール
+	//g_onair[_ch] = false;
+ //   for (int ch = 0; ch < MAXCH; ++ch) {
+ //       //g_onair[ch] = false;
+ //       HWND hCtl = GetDlgItem(_hDlg, IDC_ONAIR_1 + ch);
+ //       InvalidateRect(hCtl, nullptr, TRUE);
+ //   }
+ //   UpdateWindow(_hDlg); // まとめて更新
 }
 
 inline std::wstring string2wstring(const std::string& s)
@@ -269,12 +289,6 @@ inline std::wstring string2wstring(const std::string& s)
     return result;
 }
 
-// 好きな色にするための値（必要なら後で動的に変更してOK）
-COLORREF ONAIR_GRAY = RGB(128, 128, 128);
-COLORREF ONAIR_RED = RGB(240, 30, 0); 
-bool g_onair[32] = {};
-HBRUSH g_hbrOnAirRed = CreateSolidBrush(ONAIR_RED);
-HBRUSH g_hbrOnAirGray = CreateSolidBrush(ONAIR_GRAY);
 
 void WM_APPRXSTATUS(
     HWND _hDlg,
