@@ -596,12 +596,11 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 
         case WM_CLOSE:
         {
-            //if (g_server.IsRunning())
-            //    g_server.Stop();
             for (UINT ch = 0; ch < GAPP.size; ++ch) {
                 if (gGstSv.size() > 0) {
-                    if (gGstSv[ch].IsRunning())
-                        gGstSv[ch].Stop();
+                    if (gGstSv[ch].IsRunning()) {
+                        BTN_STOP(hDlg, GAPP, ch);
+                    }
                 }
             }
 

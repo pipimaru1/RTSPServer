@@ -667,10 +667,13 @@ int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[])
         str_GOptionEntry_01 << "Port to listen on (default: " << _rctrl.out_port << ")";
 
         std::string str_outport = std::to_string(_rctrl.out_port);
+#if 0
         const size_t buffer_size = 32;                          // バッファのサイズ
-        static char tmp_port[buffer_size];                      // 書き込み可能なバッファ
-        //strncpy(tmp_port, str_outport.c_str(), buffer_size - 1);
+        char tmp_port[buffer_size];                      // 書き込み可能なバッファ
         strcpy_s(tmp_port, buffer_size, str_outport.c_str());//値コピー
+#else
+        gchar* tmp_port = g_strdup(str_outport.c_str());   // 文字列を確保
+#endif
 
         std::ostringstream str_pipeline;
         std::ostringstream sstr_channel;
@@ -716,12 +719,13 @@ int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[])
         std::cerr << "str_pipeline : " << str_pipeline.str() << std::endl;
 #endif
         hls_on = true;
-        //        }
 
         sstr_channel << "/" << _rctrl.channel_name;
+        std::string opt_help = str_GOptionEntry_01.str(); //メモリ確保
 
-        static GOptionEntry entries[] = {
-            {"port",         'p',  0, G_OPTION_ARG_STRING, &(tmp_port),  str_GOptionEntry_01.str().c_str(),               "PORT"},
+        GOptionEntry entries[] = {
+            //{"port",         'p',  0, G_OPTION_ARG_STRING, &(tmp_port),  str_GOptionEntry_01.str().c_str(),               "PORT"},
+            {"port",         'p',  0, G_OPTION_ARG_STRING, &(tmp_port),  opt_help.c_str(),               "PORT"},
             {"disable-rtcp", '\0', 0, G_OPTION_ARG_NONE,   &disable_rtcp,"Whether RTCP should be disabled (default false)", NULL},
             {NULL}
         };
@@ -740,6 +744,7 @@ int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[])
         }
         g_option_context_free(optctx);
 
+        g_free(tmp_port);  // ← 忘れずに
         //////////////////////////////////////////
         // 
         // 中継メインループのインスタンス作成
@@ -805,19 +810,18 @@ int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[])
         {
             std::cout << "Stream Ready at HLS:" << hls_dir.c_str() << std::endl;
         }
+	} //mtx ロックここまで
 
-        g_main_loop_run(_rctrl.ptLoop);
+    g_main_loop_run(_rctrl.ptLoop);
         
-        //サーバが止まるとここに来るはず
-        // サーバ削除
-        g_source_remove(_rctrl.ServerID);
+    //サーバが止まるとここに来るはず
+    // サーバ削除
+    g_source_remove(_rctrl.ServerID);
 
-        // タイマ削除
-        if (_rctrl.g_rx_watch_id != 0) {
-            g_source_remove(_rctrl.g_rx_watch_id);
-            _rctrl.g_rx_watch_id = 0;
-        }
-
+    // タイマ削除
+    if (_rctrl.g_rx_watch_id != 0) {
+        g_source_remove(_rctrl.g_rx_watch_id);
+        _rctrl.g_rx_watch_id = 0;
     }
     return 0;
 }
