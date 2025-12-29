@@ -607,15 +607,6 @@ GstRTSPMedia* prewarm_media_without_client(GstRTSPMediaFactory* factory,
     // もしあなたのヘッダが (media, GstRTSPThread*) 版なら、ここは呼ばずに
     // 下の element->PLAYING だけで十分です（実際それで動きます）。
 
-    // パイプラインを PLAYING に
-    //if (GstElement* element = gst_rtsp_media_get_element(media)) {
-    //    gst_element_set_state(element, GST_STATE_PLAYING);
-    //    if (GstBus* bus = gst_element_get_bus(element)) {
-    //        gst_bus_add_watch(bus, CALLBK_BusWatch, loop);
-    //        gst_object_unref(bus);
-    //    }
-    //    gst_object_unref(element);
-    //}
     if (GstElement* element = gst_rtsp_media_get_element(media)) {
         gst_element_set_state(element, GST_STATE_PLAYING);
 
@@ -667,13 +658,10 @@ int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[])
         str_GOptionEntry_01 << "Port to listen on (default: " << _rctrl.out_port << ")";
 
         std::string str_outport = std::to_string(_rctrl.out_port);
-#if 0
-        const size_t buffer_size = 32;                          // バッファのサイズ
-        char tmp_port[buffer_size];                      // 書き込み可能なバッファ
-        strcpy_s(tmp_port, buffer_size, str_outport.c_str());//値コピー
-#else
+        //const size_t buffer_size = 32;                          // バッファのサイズ
+        //char tmp_port[buffer_size];                             // 書き込み可能なバッファ
+        //strcpy_s(tmp_port, buffer_size, str_outport.c_str());   //値コピー
         gchar* tmp_port = g_strdup(str_outport.c_str());   // 文字列を確保
-#endif
 
         std::ostringstream str_pipeline;
         std::ostringstream sstr_channel;
@@ -770,8 +758,6 @@ int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[])
         // CALLBK_MediaCfg に GMainLoop* を渡す
         // いやー、ポインタの勉強になりますね。
         //////////////////////////////////////////
-//#if 1
-
         g_signal_connect(
             factory,
             "media-configure",

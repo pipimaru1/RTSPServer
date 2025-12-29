@@ -197,6 +197,11 @@ void SaveSettings(
         GetDlgItemTextW(hDlg, _GAPP.IDC_EDIT_PORTNAME[i], buf, 256);
         WritePrivateProfileStringW(_GAPP.SVNAME[i].c_str(), L"Channel", buf, ini.c_str());
     }
+	//HTTP_PORTとHLS_STRを保存
+    GetDlgItemTextW(hDlg, IDC_EDIT_HTTPPORT, buf, 256);
+    WritePrivateProfileStringW(L"HTTP", L"Port", buf, ini.c_str());
+	GetDlgItemTextW(hDlg, IDC_EDIT_HLS, buf, 256);
+	WritePrivateProfileStringW(L"HTTP", L"HLS", buf, ini.c_str());
 }
 
 void LoadSettings(HWND hDlg, UINT _IDC_EDIT_PORTIN, UINT _IDC_EDIT_PORTOUT, UINT _IDC_EDIT_PORTNAME, UINT _IDC_ )
@@ -238,10 +243,19 @@ void LoadSettings(
         SetDlgItemTextW(hDlg, _GAPP.IDC_EDIT_PORTOUT[i], tmp);
         SetDlgItemTextW(hDlg, _GAPP.IDC_EDIT_PORTNAME[i], channel);
     }
+
+	//HTTP_PORTとHLS_STRを読み込み
+    int httpPort = GetPrivateProfileIntW(L"HTTP", L"Port", _GAPP.HTTP_PORT, ini.c_str());
+    wchar_t hlsStr[256]{};
+    GetPrivateProfileStringW(L"HTTP", L"HLS", _GAPP.HLS_STR.c_str(), hlsStr, 256, ini.c_str());
+    wchar_t tmp[32]{};
+    _snwprintf_s(tmp, _TRUNCATE, L"%d", httpPort);
+    SetDlgItemTextW(hDlg, IDC_EDIT_HTTPPORT, tmp);
+	SetDlgItemTextW(hDlg, IDC_EDIT_HLS, hlsStr);
 }
 
-
-void SetRunningUi(HWND hDlg, bool running, 
+//コントロールの状態を一括変更
+void SetRunningUi(HWND hDlg, bool running,
     UINT _IDC_BTN_START,
 	UINT _IDC_BTN_STOP,
     UINT _IDC_EDIT_PORTIN,
@@ -260,6 +274,8 @@ void SetRunningUi(HWND hDlg, bool running,
     EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTOUT), running ? FALSE : TRUE);
     EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTNAME), running ? FALSE : TRUE);
 }
+
+//コントロールの状態を一括変更
 void SetRunningUi(HWND hDlg, bool running,
     APP_SETTINGS& _GAPP
 )
@@ -457,6 +473,53 @@ void FillUrlCombo(HWND hDlg, int combo_id, int out_port, const std::string& chan
     // 先頭を選択しておく（必要なら）
     SendMessageW(hCmb, CB_SETCURSEL, 0, 0);
 }
+////////////////////////////////////////////////////////////////////////////////
+//cmmbno box に HTTPのHLSのURL をセット
+// http://<IP_ADDRESS>:<HTTPPORT>/<channel_name>-<out_port>/index.m3u8
+void FillUrlCombo_http(
+    HWND hDlg, 
+    int combo_id, 
+    int http_port, 
+    int out_port, 
+    const std::wstring& channel_name, 
+    const std::wstring& _hls
+)
+{
+    HWND hCmb = GetDlgItem(hDlg, combo_id);
+    if (!hCmb) return;
+    SendMessageW(hCmb, CB_RESETCONTENT, 0, 0);
+
+    // 127.0.0.1 は必ず入れる
+    {
+        std::wstring wurl = L"http://127.0.0.1:" 
+            + std::to_wstring(http_port)
+			//+ L"/" + _hls
+            + L"/" + channel_name
+			+ L"-" + std::to_wstring(out_port) 
+            + L"/index.m3u8";
+
+        SendMessageW(hCmb, CB_ADDSTRING, 0, (LPARAM)wurl.c_str());
+    }
+	// ローカルIP一覧
+    const std::vector<std::string> ipList = getLocalIPAddresses();
+    for (const std::string& ip : ipList) {
+        // 127.0.0.1 と同じなら重複回避
+        if (ip == "127.0.0.1")
+            continue;
+		std::wstring wip = Utf8ToW(ip);
+        std::wstring wurl = L"http://" 
+            + wip 
+            + L":" + std::to_wstring(http_port)
+            //+ L"/" + _hls
+            + L"/" + channel_name
+            + L"-" + std::to_wstring(out_port) 
+            + L"/index.m3u8";
+        SendMessageW(hCmb, CB_ADDSTRING, 0, (LPARAM)wurl.c_str());
+    }
+    // 先頭を選択しておく（必要なら）
+	SendMessageW(hCmb, CB_SETCURSEL, 0, 0);
+}
+
 
 //選択されたURLをクリップボードへ（CBN_SELCHANGE）
 void CopySelectedComboTextToClipboard(HWND hDlg, int combo_id)

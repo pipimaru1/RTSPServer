@@ -2,6 +2,7 @@
 // Microsoft Visual C++ で生成されたインクルード ファイル。
 // RTSPServerGUI.rc で使用
 //
+#define IDI_ROBOT128                    1
 #define IDC_MYICON                      2
 #define IDD_RTSPSERVERGUI_DIALOG        102
 #define IDS_APP_TITLE                   103
@@ -14,11 +15,9 @@
 #define IDR_MAINFRAME                   128
 #define IDD_MAIN                        129
 #define IDC_BTN_START_ALL               130
-#define IDI_ROBOT128                    1
 #define IDI_ROBOT64                     131
 #define IDI_ROBOT32                     132
 #define IDI_ICON2                       133
-
 #define IDC_COMBO1                      1007
 #define IDC_BTN_START1                  1101
 #define IDC_BTN_START2                  1102
@@ -149,6 +148,10 @@
 #define IDC_EDIT_PORTOUT30              1430
 #define IDC_EDIT_PORTOUT31              1431
 #define IDC_EDIT_PORTOUT32              1432
+
+#define IDC_EDIT_HTTPPORT               1451
+#define IDC_EDIT_HLS                    1452
+
 #define IDC_CHK1                        1501
 #define IDC_CHK2                        1502
 #define IDC_CHK3                        1503
@@ -345,6 +348,38 @@
 #define IDC_ONAIR_51                    2030
 #define IDC_ONAIR_31                    2031
 #define IDC_ONAIR_32                    2032
+#define IDC_CMB_HLS1                    2100
+#define IDC_CMB_HLS2                    2101
+#define IDC_CMB_HLS3                    2102
+#define IDC_CMB_HLS4                    2103
+#define IDC_CMB_HLS5                    2104
+#define IDC_CMB_HLS6                    2105
+#define IDC_CMB_HLS7                    2106
+#define IDC_CMB_HLS8                    2107
+#define IDC_CMB_HLS9                    2108
+#define IDC_CMB_HLS10                   2109
+#define IDC_CMB_HLS11                   2110
+#define IDC_CMB_HLS12                   2111
+#define IDC_CMB_HLS13                   2112
+#define IDC_CMB_HLS14                   2113
+#define IDC_CMB_HLS15                   2114
+#define IDC_CMB_HLS16                   2115
+#define IDC_CMB_HLS17                   2116
+#define IDC_CMB_HLS18                   2117
+#define IDC_CMB_HLS19                   2118
+#define IDC_CMB_HLS20                   2119
+#define IDC_CMB_HLS21                   2120
+#define IDC_CMB_HLS22                   2121
+#define IDC_CMB_HLS23                   2122
+#define IDC_CMB_HLS24                   2123
+#define IDC_CMB_HLS25                   2124
+#define IDC_CMB_HLS26                   2125
+#define IDC_CMB_HLS27                   2126
+#define IDC_CMB_HLS28                   2127
+#define IDC_CMB_HLS29                   2128
+#define IDC_CMB_HLS30                   2129
+#define IDC_CMB_HLS31                   2130
+#define IDC_CMB_HLS32                   2131
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

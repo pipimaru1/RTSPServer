@@ -44,8 +44,15 @@ bool GetIntFromEdit(HWND hDlg, int id, int& outValue);
 std::vector<std::string> getLocalIPAddresses();
 bool SetClipboardTextW(HWND owner, const std::wstring& text);
 void FillUrlCombo(HWND hDlg, int combo_id, int out_port, const std::string& channel_name);
+void FillUrlCombo_http(
+    HWND hDlg,
+    int combo_id,
+    int http_port,
+    int out_port,
+    const std::wstring& channel_name,
+    const std::wstring& _hls
+);
 void CopySelectedComboTextToClipboard(HWND hDlg, int combo_id);
-
 
 //////////////////////////////////////////////////////////////////////////////////////
 struct APP_SETTINGS
@@ -134,6 +141,17 @@ struct APP_SETTINGS
 		IDC_CMB_BCFRASE_29,IDC_CMB_BCFRASE_30,IDC_CMB_BCFRASE_31,IDC_CMB_BCFRASE_32
 	};
 
+    std::array<UINT, MAXCH> IDC_CMB_HLS = {
+		IDC_CMB_HLS1, IDC_CMB_HLS2, IDC_CMB_HLS3, IDC_CMB_HLS4,
+		IDC_CMB_HLS5, IDC_CMB_HLS6, IDC_CMB_HLS7, IDC_CMB_HLS8,
+		IDC_CMB_HLS9, IDC_CMB_HLS10, IDC_CMB_HLS11, IDC_CMB_HLS12,
+		IDC_CMB_HLS13, IDC_CMB_HLS14, IDC_CMB_HLS15, IDC_CMB_HLS16,
+		IDC_CMB_HLS17, IDC_CMB_HLS18, IDC_CMB_HLS19, IDC_CMB_HLS20,
+		IDC_CMB_HLS21, IDC_CMB_HLS22, IDC_CMB_HLS23, IDC_CMB_HLS24,
+		IDC_CMB_HLS25, IDC_CMB_HLS26, IDC_CMB_HLS27, IDC_CMB_HLS28,
+		IDC_CMB_HLS29, IDC_CMB_HLS30, IDC_CMB_HLS31, IDC_CMB_HLS32
+	};
+
     std::array<UINT, MAXCH> IDC_ONAIR = {
 		IDC_ONAIR_1,IDC_ONAIR_2,IDC_ONAIR_3,IDC_ONAIR_4,
 		IDC_ONAIR_5,IDC_ONAIR_6,IDC_ONAIR_7,IDC_ONAIR_8,
@@ -144,7 +162,18 @@ struct APP_SETTINGS
 		IDC_ONAIR_25,IDC_ONAIR_26,IDC_ONAIR_27,IDC_ONAIR_28,
 		IDC_ONAIR_29,IDC_ONAIR_30,IDC_ONAIR_31,IDC_ONAIR_32
 	};
-        
+/*
+    std::array<std::wstring, MAXCH> _DEF_HLS = {
+        L"hls",L"hls",L"hls",L"hls",
+		L"hls",L"hls",L"hls",L"hls",
+		L"hls",L"hls",L"hls",L"hls",
+		L"hls",L"hls",L"hls",L"hls",
+		L"hls",L"hls",L"hls",L"hls",
+		L"hls",L"hls",L"hls",L"hls",
+		L"hls",L"hls",L"hls",L"hls",
+		L"hls",L"hls",L"hls",L"hls"
+    };
+*/
 
     std::array<UINT, MAXCH> _DEF_PORTIN = {
 		5004,5006,5008,5010,
@@ -166,6 +195,9 @@ struct APP_SETTINGS
 		8602,8604,8606,8608,
 		8610,8612,8614,8616
     };
+
+    UINT HTTP_PORT = 8080;                        // HTTPポート（HLS用）
+    std::wstring HLS_STR = L"hls";
 };
 /////////////////////////////////////////
 //

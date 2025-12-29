@@ -92,9 +92,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     return (int)ret;
 }
 ////////////////////////////////////////////////////////////////////////////////
+// この関数はWinProcの記述を軽くするためのマクロ関数です
 //cmmbno box に URL をセット
-//    FillUrlCombo(hDlg, IDC_CMB_BCFRASE_1, int out_port, const std::string & channel_name)
-
 void IDC_SET_CMBBOX_URL(
     HWND _hDlg,
     UINT _IDC_CMB_BCFRASE,
@@ -127,8 +126,63 @@ void IDC_SET_CMBBOX_URL(
     );
 
 }
+////////////////////////////////////////////////////////////////////////////////
+// この関数はWinProcの記述を軽くするためのマクロ関数です
+//cmmbno box に HTTPのHLSのURL をセット
+// http://<IP_ADDRESS>:<HTTPPORT>/hls/<PORTNAME>-<PORTOUT>.m3u8
+
+void IDC_SET_CMBBOX_HLS(
+    HWND _hDlg,
+    UINT _IDC_CMB_HLS,
+    UINT _IDC_EDIT_PORTOUT,
+    UINT _HTTP_PORT,
+    UINT _IDC_EDIT_PORTNAME,
+	std::wstring _def_hls
+) {
+    int outPort = 0;
+    if (!GetIntFromEdit(_hDlg, _IDC_EDIT_PORTOUT, outPort) ||
+        outPort < 1 ||
+        outPort > 65535)
+    {
+        MessageBoxW(_hDlg, L"ポート番号が不正です。(1～65535)", L"入力エラー", MB_ICONERROR);
+        return;
+    }
+    wchar_t nameW[256]{};
+    GetDlgItemTextW(_hDlg, _IDC_EDIT_PORTNAME, nameW, 256);
+    std::wstring channelW = nameW;
+    if (channelW.empty())
+    {
+        MessageBoxW(_hDlg, L"ストリーム名（Channel）が空です。", L"入力エラー", MB_ICONERROR);
+        return;
+    }
+
+	//HTTPのHLS URLコンボボックス更新
+    wchar_t _whls[256]{};
+    GetDlgItemTextW(_hDlg, IDC_EDIT_HLS, _whls, 256);
+
+    wchar_t _whttp_port[256]{};
+	GetDlgItemTextW(_hDlg, IDC_EDIT_HTTPPORT, _whttp_port, 256);
+
+    
+    //FIX: ダイアログボックスからの読み出しとグローバル変数へのセットを一括にしないとダメですね
+    //文字列をコピー
+    _def_hls = _whls;
+	GAPP.HLS_STR = _def_hls;
+	GAPP.HTTP_PORT = _wtoi(_whttp_port);
+	_HTTP_PORT = GAPP.HTTP_PORT;
+
+    FillUrlCombo_http(
+        _hDlg,
+        _IDC_CMB_HLS,
+        _HTTP_PORT, // HTTPポート固定
+        outPort,
+		channelW,
+        _def_hls
+	);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
+// この関数はWinProcの記述を軽くするためのマクロ関数です
 bool IDC_BTN_START(
     HWND _hDlg,
     RtspServerController& _g_server,
@@ -197,6 +251,7 @@ bool IDC_BTN_START(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// この関数はWinProcの記述を軽くするためのマクロ関数です
 bool IDC_BTN_START(
     HWND _hDlg,
     APP_SETTINGS& _GAPP,
@@ -211,6 +266,15 @@ bool IDC_BTN_START(
         GAPP.IDC_EDIT_PORTOUT[_ch],
         GAPP.IDC_EDIT_PORTNAME[_ch]
     );
+	//HLSコンボボックス更新
+    IDC_SET_CMBBOX_HLS(
+        _hDlg,
+        GAPP.IDC_CMB_HLS[_ch],
+        GAPP.IDC_EDIT_PORTOUT[_ch],
+        GAPP.HTTP_PORT,
+        GAPP.IDC_EDIT_PORTNAME[_ch],
+		GAPP.HLS_STR
+	);
 
     return IDC_BTN_START(
         _hDlg,
@@ -226,6 +290,8 @@ bool IDC_BTN_START(
     );
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// この関数はWinProcの記述を軽くするためのマクロ関数です
 void BTN_STOP(
     HWND _hDlg,
     RtspServerController& _g_server,
@@ -250,6 +316,8 @@ void BTN_STOP(
     
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// この関数はWinProcの記述を軽くするためのマクロ関数です
 void BTN_STOP(
     HWND _hDlg,
 	APP_SETTINGS& _GAPP,
@@ -289,7 +357,8 @@ inline std::wstring string2wstring(const std::string& s)
     return result;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
+// この関数はWinProcの記述を軽くするためのマクロ関数です
 void WM_APPRXSTATUS(
     HWND _hDlg,
     WPARAM wParam,
@@ -369,6 +438,7 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             // タイトルを設定（不要なら消してOK）
             //SetWindowTextW(hDlg, szTitle);
 
+			// RTSP URLのコンボボックスをセット
             for (int i = 0; i < GAPP.IDC_CMB_BCFRASE.size(); ++i)
             {
                 IDC_SET_CMBBOX_URL(
@@ -378,7 +448,18 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     GAPP.IDC_EDIT_PORTNAME[i]
                 );
             }
-
+			// HLSのURLのコンボボックスをセット
+            for (int i = 0; i < GAPP.IDC_CMB_HLS.size(); ++i)
+            {
+                IDC_SET_CMBBOX_HLS(
+                    hDlg,
+                    GAPP.IDC_CMB_HLS[i],
+                    GAPP.IDC_EDIT_PORTOUT[i],
+                    GAPP.HTTP_PORT,
+                    GAPP.IDC_EDIT_PORTNAME[i],
+                    GAPP.HLS_STR
+                );
+			}
 
             return (INT_PTR)TRUE;
         }break;
@@ -478,6 +559,12 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     CopySelectedComboTextToClipboard(hDlg, (int)id);
                     return (INT_PTR)TRUE;
                 }
+                if (id >= IDC_CMB_HLS1 && id < (IDC_CMB_HLS1 + MAXCH)) {
+					//同じ関数が使える
+                    CopySelectedComboTextToClipboard(hDlg, (int)id);
+                    return (INT_PTR)TRUE;
+                }
+
             }
             //break; breakしない
 
@@ -575,17 +662,12 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 case IDOK:
                 case IDCANCEL:
                 {
-                    // 終了時：稼働中なら止める → 設定保存 → ダイアログ終了
-                    //if (g_server.IsRunning())
-                    //    g_server.Stop();
-
                     for(UINT ch = 0; ch < GAPP.size; ++ch){
                         if (gGstSv.size() > 0) {
                             if (gGstSv[ch].IsRunning())
                                 gGstSv[ch].Stop();
                         }
 					}
-
 					SaveSettings(hDlg, GAPP);   
                     SetGuiNotifyHwnd(nullptr);
                     EndDialog(hDlg, id);
