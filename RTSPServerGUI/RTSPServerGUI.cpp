@@ -460,6 +460,17 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     GAPP.HLS_STR
                 );
 			}
+            // ダイアログボックスのキャプションを変更
+            //元のキャプション
+            int len = GetWindowTextLengthW(hDlg);
+            std::wstring caption_org(len, L'\0');
+            if (len > 0) {
+                GetWindowTextW(hDlg, &caption_org[0], len + 1);
+            }
+            // ビルドした日付を入れる
+            std::wstring caption = caption_org + L" Build=[ " __DATE__ L" " __TIME__ L" ]";
+            SetWindowTextW(hDlg, caption.c_str());
+
 
             return (INT_PTR)TRUE;
         }break;
