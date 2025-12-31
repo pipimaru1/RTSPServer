@@ -540,3 +540,41 @@ void CopySelectedComboTextToClipboard(HWND hDlg, int combo_id)
 
     SetClipboardTextW(hDlg, text);
 }
+
+void ForceWindowOnVisibleMonitor(HWND hWnd)
+{
+    // いまのウィンドウ位置（ダイアログの矩形）
+    RECT rc;
+    GetWindowRect(hWnd, &rc);
+
+    // このウィンドウに一番近いモニタ（画面外なら最寄り/なければプライマリ）
+    HMONITOR hMon = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
+
+    MONITORINFO mi{};
+    mi.cbSize = sizeof(mi);
+    GetMonitorInfo(hMon, &mi);
+
+    // 作業領域（タスクバー等を除いた見える領域）
+    RECT wa = mi.rcWork;
+
+    int w = rc.right - rc.left;
+    int h = rc.bottom - rc.top;
+
+    int x = rc.left;
+    int y = rc.top;
+
+    // 左上が作業領域からはみ出していたら戻す
+    if (x < wa.left) x = wa.left;
+    if (y < wa.top)  y = wa.top;
+
+    // 右下がはみ出していたら戻す
+    if (x + w > wa.right)  x = wa.right - w;
+    if (y + h > wa.bottom) y = wa.bottom - h;
+
+    // 念のため（ダイアログが画面より大きい場合）
+    if (x < wa.left) x = wa.left;
+    if (y < wa.top)  y = wa.top;
+
+    SetWindowPos(hWnd, nullptr, x, y, 0, 0,
+        SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+}

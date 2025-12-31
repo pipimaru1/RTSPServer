@@ -222,6 +222,8 @@ void SetRunningUi(HWND hDlg, bool running,
 );
 void SetRunningUi(HWND hDlg, bool running,APP_SETTINGS& _GAPP);
 
+void ForceWindowOnVisibleMonitor(HWND hWnd);
+
 //void LoadSettings(
 //    HWND hDlg,
 //    APP_SETTINGS& _GAPP

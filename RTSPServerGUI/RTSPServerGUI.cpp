@@ -1,15 +1,89 @@
 ﻿// RTSPServerGUI.cpp : アプリケーションのエントリ ポイントを定義します。
 
 ///////////////////////////////////////////////////////////////////
-// テスト用ffmpeg例 USBカメラの映像をRTSPserverに送信する例
-// 家のPC
-// 標準画質
-// ffmpeg -f dshow -i video="Logicool BRIO"  -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency  -f rtp rtp://127.0.0.1:5004
-// HD画質
-// ffmpeg -f dshow -framerate 30 -video_size 1920x1080 -i video="Logicool BRIO" -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5004
-// ffmpeg -f dshow -framerate 30 -video_size 1920x1080 -i video="Logicool BRIO" -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5005
-// 135x "FHD Camera"
-// ffmpeg -f dshow -framerate 30 -video_size 1920x1080 -i video="FHD Camera" -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5004
+/*
+テスト用ffmpeg例 USBカメラの映像をRTSPserverに送信する例
+ 家のPC
+ 標準画質
+ ffmpeg -f dshow -i video="Logicool BRIO"  -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency  -f rtp rtp://127.0.0.1:5004
+ HD画質
+ ffmpeg -f dshow -framerate 30 -video_size 1920x1080 -i video="Logicool BRIO" -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5004
+ ffmpeg -f dshow -framerate 30 -video_size 1920x1080 -i video="Logicool BRIO" -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5005
+ 135x "FHD Camera"
+ ffmpeg -f dshow -framerate 30 -video_size 1920x1080 -i video="FHD Camera" -vcodec libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5004
+
+ カラーバー
+ ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5004
+ ffmpeg -re -f lavfi -i smptebars=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5004
+ ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp -sdp_file out.sdp rtp://127.0.0.1:5004
+    
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5004
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5006
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5008
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5010
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5012
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5014
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5016
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5018
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5020
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5022
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5024
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5026
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5028
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5030
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5032
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5034
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5036
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5038
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5040
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5042
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5044
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5046
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5048
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5050
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5052
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5054
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5056
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5058
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5060
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5062
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5064
+ start ffmpeg -re -f lavfi -i testsrc2=size=1920x1080:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5066
+
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5004
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5006
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5008
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5010
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5012
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5014
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5016
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5018
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5020
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5022
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5024
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5026
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5028
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5030
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5032
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5034
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5036
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5038
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5040
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5042
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5044
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5046
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5048
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5050
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5052
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5054
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5056
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5058
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5060
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5062
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5064
+ start ffmpeg -re -f lavfi -i testsrc2=size=640x480:rate=30 -an -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -f rtp rtp://127.0.0.1:5066
+ */
+
 // テスト用FFplay例
 //ffplay rtsp://127.0.0.1:8554/default
 //ffplay rtsp://127.0.0.1:8554/test
@@ -136,8 +210,8 @@ void IDC_SET_CMBBOX_HLS(
     UINT _IDC_CMB_HLS,
     UINT _IDC_EDIT_PORTOUT,
     UINT _HTTP_PORT,
-    UINT _IDC_EDIT_PORTNAME,
-	std::wstring _def_hls
+    UINT _IDC_EDIT_PORTNAME
+	//std::wstring _def_hls
 ) {
     int outPort = 0;
     if (!GetIntFromEdit(_hDlg, _IDC_EDIT_PORTOUT, outPort) ||
@@ -166,9 +240,10 @@ void IDC_SET_CMBBOX_HLS(
     
     //FIX: ダイアログボックスからの読み出しとグローバル変数へのセットを一括にしないとダメですね
     //文字列をコピー
-    _def_hls = _whls;
-	GAPP.HLS_STR = _def_hls;
-	GAPP.HTTP_PORT = _wtoi(_whttp_port);
+ //   _def_hls = _whls;
+	//GAPP.HLS_STR = _def_hls;
+    GAPP.HLS_STR = _whls;
+    GAPP.HTTP_PORT = _wtoi(_whttp_port);
 	_HTTP_PORT = GAPP.HTTP_PORT;
 
     FillUrlCombo_http(
@@ -177,8 +252,9 @@ void IDC_SET_CMBBOX_HLS(
         _HTTP_PORT, // HTTPポート固定
         outPort,
 		channelW,
-        _def_hls
-	);
+        //_def_hls
+        GAPP.HLS_STR
+    );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -272,8 +348,8 @@ bool IDC_BTN_START(
         GAPP.IDC_CMB_HLS[_ch],
         GAPP.IDC_EDIT_PORTOUT[_ch],
         GAPP.HTTP_PORT,
-        GAPP.IDC_EDIT_PORTNAME[_ch],
-		GAPP.HLS_STR
+        GAPP.IDC_EDIT_PORTNAME[_ch]
+		//GAPP.HLS_STR
 	);
 
     return IDC_BTN_START(
@@ -456,8 +532,8 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                     GAPP.IDC_CMB_HLS[i],
                     GAPP.IDC_EDIT_PORTOUT[i],
                     GAPP.HTTP_PORT,
-                    GAPP.IDC_EDIT_PORTNAME[i],
-                    GAPP.HLS_STR
+                    GAPP.IDC_EDIT_PORTNAME[i]
+                    //GAPP.HLS_STR
                 );
 			}
             // ダイアログボックスのキャプションを変更
@@ -471,6 +547,9 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             std::wstring caption = caption_org + L" Build=[ " __DATE__ L" " __TIME__ L" ]";
             SetWindowTextW(hDlg, caption.c_str());
 
+			//ダイアログボックスの位置を強制的に0,0にする
+            if(0)
+                ForceWindowOnVisibleMonitor(hDlg);
 
             return (INT_PTR)TRUE;
         }break;
