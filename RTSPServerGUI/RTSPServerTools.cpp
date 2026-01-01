@@ -35,14 +35,21 @@ bool RtspServerController::Start(int inPort, int outPort, const std::string& cha
 }
 #endif
 
-bool RtspServerController::StartExx(HWND hwndNotify)
+bool RtspServerController::StartEx(HWND hwndNotify, bool _test_pattern)
 {
+	// すでに起動中なら何もしない
     if (running_.load())
         return false;
 
+	// hwndNotify を保存 パイプラインからの通知を受けるウィンドウハンドル
     hwndNotify_ = hwndNotify;
     running_.store(true);
-    th_ = std::thread(&RtspServerController::ThreadMainExx, this);
+
+	// スレッド開始 パイプライン起動
+	if (_test_pattern)
+		th_ = std::thread(&RtspServerController::ThreadMainExTest, this);
+	else
+        th_ = std::thread(&RtspServerController::ThreadMainEx, this);
     return true;
 }
 
@@ -113,10 +120,11 @@ void RtspServerController::ThreadMain(int inPort, int outPort, std::string chann
 }
 #endif
 //////////////////////////////////////////////////////////
+// 
 // RTSPサーバースレッドのメイン
 // 
 //////////////////////////////////////////////////////////
-void RtspServerController::ThreadMainExx()
+void RtspServerController::ThreadMainEx()
 {
     //「ThreadMain() が動いている間」は arg0 などのローカル変数はキープされています。
     // なのでパイプラインが動いている間は基本的には有効。
@@ -140,8 +148,31 @@ void RtspServerController::ThreadMainExx()
 
     // running_ は Stop() 側で最終確定します（ここでは触らない）
 }
+//上の関数のテスト用
+void RtspServerController::ThreadMainExTest()
+{
+    //「ThreadMain() が動いている間」は arg0 などのローカル変数はキープされています。
+    // なのでパイプラインが動いている間は基本的には有効。
 
+    // OpenRTSPServer が g_option_context_parse を呼ぶので、ダミー argv を用意
+    char arg0[] = "RTSPServerGUI";
+    char* argv[] = { arg0, nullptr };
+    int argc = 1;
 
+    // loop_ は OpenRTSPServer 内で g_main_loop_new されます
+    //int r = OpenRTSPServer(loop_, inPort, outPort, channelUtf8, argc, argv);
+    int r = OpenRTSPServerEx(rCtrl, argc, argv, true);
+
+    (void)r;
+
+    // 予期せぬ終了や Stop 後の終了も含め、GUIへ通知
+    if (hwndNotify_ != nullptr)
+    {
+        PostMessageW(hwndNotify_, WM_APP_SERVER_EXITED, 0, 0);
+    }
+
+    // running_ は Stop() 側で最終確定します（ここでは触らない）
+}
 //////////////////////////////////////////////////////////
 
 std::wstring GetIniPath()

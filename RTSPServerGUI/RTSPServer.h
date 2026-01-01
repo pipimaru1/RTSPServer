@@ -97,7 +97,7 @@ static gboolean CALLBK_RstPipeline(gpointer data);
 
 //int OpenRTSPServer(GMainLoop*& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
 //int OpenRTSPServer(PTMLOOP& loop, int in_port, int out_port, std::string& channel_name, int argc, char* argv[]);
-int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[]);
+int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[], bool _test_patern=false);
 
 #define DEFAULT_DISABLE_RTCP FALSE
 #define GST_INTERVAL_PORTWATCH 500 // ms

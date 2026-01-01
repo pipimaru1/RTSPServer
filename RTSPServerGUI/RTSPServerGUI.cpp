@@ -95,6 +95,7 @@
 #include "framework.h"
 #include "RTSPServer.h"
 #include "RTSPServerGUI.h"
+#include "Tooltip.hpp"
 
 #define MAX_LOADSTRING 100
 
@@ -105,6 +106,8 @@ std::array<RtspServerController, MAXCH> gGstSv;
 
 // 通知用（Controller 側と同じ値にしてください）
 constexpr UINT WM_APP_SERVER_EXITED = WM_APP + 101;
+
+Tooltip _TP;
 
 ///////////////////////////////////////////////
 // 
@@ -268,7 +271,8 @@ bool IDC_BTN_START(
     UINT _IDC_EDIT_PORTIN,
     UINT _IDC_EDIT_PORTOUT,
 	UINT _IDC_EDIT_PORTNAME,
-	UINT _IDC_CHK
+	UINT _IDC_CHK,
+	BOOL _TESTMODE
 ){
     int inPort = 0, outPort = 0;
     if (!GetIntFromEdit(_hDlg, _IDC_EDIT_PORTIN, inPort) ||
@@ -307,9 +311,14 @@ bool IDC_BTN_START(
 	_g_server.rCtrl.out_port = outPort;
 	_g_server.rCtrl.channel_name = channelUtf8;
 
-    bool _ret = _g_server.StartExx(_hDlg);
-#endif
+    ///////////////////////////////////////
+    //
+	// Gsteamer RTSPサーバー起動
+    //
+	///////////////////////////////////////
+    bool _ret = _g_server.StartEx(_hDlg, _TESTMODE);
 
+#endif
     if (!_ret)
     {
         MessageBoxW(_hDlg, L"既に起動中です。", L"情報", MB_OK | MB_ICONINFORMATION);
@@ -331,7 +340,8 @@ bool IDC_BTN_START(
 bool IDC_BTN_START(
     HWND _hDlg,
     APP_SETTINGS& _GAPP,
-    UINT _ch
+    UINT _ch,
+	bool _TESTMODE = FALSE
 ){
 //	gGstSv[_ch].rCtrl.ch = _ch; // チャンネル番号をセット
 
@@ -362,7 +372,8 @@ bool IDC_BTN_START(
         _GAPP.IDC_EDIT_PORTIN[_ch],
 		_GAPP.IDC_EDIT_PORTOUT[_ch],
 		_GAPP.IDC_EDIT_PORTNAME[_ch],
-		_GAPP.IDC_CHK[_ch]
+		_GAPP.IDC_CHK[_ch],
+        _TESTMODE
     );
 }
 
@@ -547,6 +558,24 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             std::wstring caption = caption_org + L" Build=[ " __DATE__ L" " __TIME__ L" ]";
             SetWindowTextW(hDlg, caption.c_str());
 
+			//_TP.EnsureTooltip(hDlg);
+			for (int i = 0; i < 5; ++i) //ツールチップは上部の5行ほどやれば十分でしょう あまり多いと重くなるかも
+            {
+                _TP.AddHoverTooltipForCtrl(hDlg, GAPP.IDC_BTN_START[i], L"RTSPサーバー(中継)開始", L"チャンネルごとに中継を開始");
+				_TP.AddHoverTooltipForCtrl(hDlg, GAPP.IDC_BTN_STOP[i], L"RTSPサーバー(中継)停止", L"チャンネルごとに中継を停止");
+                _TP.AddHoverTooltipForCtrl(hDlg, GAPP.IDC_CMB_BCFRASE[i], L"RTSP URL", L"RTSP URLを選択");
+                _TP.AddHoverTooltipForCtrl(hDlg, GAPP.IDC_EDIT_PORTOUT[i], L"出力ポート番号", L"出力ポート番号を入力");
+				_TP.AddHoverTooltipForCtrl(hDlg, GAPP.IDC_EDIT_PORTIN[i], L"入力ポート番号", L"入力ポート番号を入力 \n\r他のポートから2以上離した方が安定します");
+                _TP.AddHoverTooltipForCtrl(hDlg, GAPP.IDC_EDIT_PORTNAME[i], L"チャンネル名", L"チャンネル名を入力 \n\r※一つのの出力ポートに複数チャンネルはサポートしていません");
+
+				_TP.AddHoverTooltipForCtrl(hDlg, GAPP.IDC_ONAIR[i], L"オンエア状態", L"オンエア状態を表示します \n\r赤色はオンエア中、灰色はオフライン \n\r※バグ 中継が終わっても赤いままのことがあります");
+				_TP.AddHoverTooltipForCtrl(hDlg, GAPP.IDC_SRCIP[i], L"送信元IPアドレス", L"送信元のIPアドレスを表示します \n\rソースから映像が来ないと表示されません");
+				_TP.AddHoverTooltipForCtrl(hDlg, GAPP.IDC_BITRATE[i], L"ビットレート", L"現在のビットレートを表示します \n\rソースから映像が来ないと表示されません");
+				_TP.AddHoverTooltipForCtrl(hDlg, GAPP.IDC_CMB_BCFRASE[i], L"RTSP URL", L"RTSP URLを選択すると、RSTDP受信用のURLがクリップボードにコピーされます");
+				_TP.AddHoverTooltipForCtrl(hDlg, GAPP.IDC_CMB_HLS[i], L"HLS URL", L"HLS URLを選択すると、HTTP受信用のURLがクリップボードにコピーされます");
+            }
+		
+
 			//ダイアログボックスの位置を強制的に0,0にする
             if(0)
                 ForceWindowOnVisibleMonitor(hDlg);
@@ -692,6 +721,40 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				case IDC_BTN_START30: { IDC_BTN_START(hDlg, GAPP, 29); return (INT_PTR)TRUE; }break;
 				case IDC_BTN_START31: { IDC_BTN_START(hDlg, GAPP, 30); return (INT_PTR)TRUE; }break;
 				case IDC_BTN_START32: { IDC_BTN_START(hDlg, GAPP, 31); return (INT_PTR)TRUE; }break;
+
+                case IDC_BTN_START_TEST1: { IDC_BTN_START(hDlg, GAPP, 0, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST2: { IDC_BTN_START(hDlg, GAPP, 1, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST3: { IDC_BTN_START(hDlg, GAPP, 2, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST4: { IDC_BTN_START(hDlg, GAPP, 3, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST5: { IDC_BTN_START(hDlg, GAPP, 4, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST6: { IDC_BTN_START(hDlg, GAPP, 5, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST7: { IDC_BTN_START(hDlg, GAPP, 6, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST8: { IDC_BTN_START(hDlg, GAPP, 7, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST9: { IDC_BTN_START(hDlg, GAPP, 8, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST10: { IDC_BTN_START(hDlg, GAPP, 9, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST11: { IDC_BTN_START(hDlg, GAPP, 10, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST12: { IDC_BTN_START(hDlg, GAPP, 11, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST13: { IDC_BTN_START(hDlg, GAPP, 12, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST14: { IDC_BTN_START(hDlg, GAPP, 13, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST15: { IDC_BTN_START(hDlg, GAPP, 14, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST16: { IDC_BTN_START(hDlg, GAPP, 15, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST17: { IDC_BTN_START(hDlg, GAPP, 16, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST18: { IDC_BTN_START(hDlg, GAPP, 17, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST19: { IDC_BTN_START(hDlg, GAPP, 18, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST20: { IDC_BTN_START(hDlg, GAPP, 19, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST21: { IDC_BTN_START(hDlg, GAPP, 20, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST22: { IDC_BTN_START(hDlg, GAPP, 21, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST23: { IDC_BTN_START(hDlg, GAPP, 22, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST24: { IDC_BTN_START(hDlg, GAPP, 23, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST25: { IDC_BTN_START(hDlg, GAPP, 24, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST26: { IDC_BTN_START(hDlg, GAPP, 25, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST27: { IDC_BTN_START(hDlg, GAPP, 26, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST28: { IDC_BTN_START(hDlg, GAPP, 27, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST29: { IDC_BTN_START(hDlg, GAPP, 28, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST30: { IDC_BTN_START(hDlg, GAPP, 29, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST31: { IDC_BTN_START(hDlg, GAPP, 30, true); return (INT_PTR)TRUE; }break;
+				case IDC_BTN_START_TEST32: { IDC_BTN_START(hDlg, GAPP, 31, true); return (INT_PTR)TRUE; }break;
+
 
                 case IDC_BTN_STOP1:  { BTN_STOP(hDlg, GAPP,  0); return (INT_PTR)TRUE; }break;
 				case IDC_BTN_STOP2:  { BTN_STOP(hDlg, GAPP,  1); return (INT_PTR)TRUE; }break;

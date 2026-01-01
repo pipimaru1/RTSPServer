@@ -148,10 +148,8 @@
 #define IDC_EDIT_PORTOUT30              1430
 #define IDC_EDIT_PORTOUT31              1431
 #define IDC_EDIT_PORTOUT32              1432
-
 #define IDC_EDIT_HTTPPORT               1451
 #define IDC_EDIT_HLS                    1452
-
 #define IDC_CHK1                        1501
 #define IDC_CHK2                        1502
 #define IDC_CHK3                        1503
@@ -380,7 +378,48 @@
 #define IDC_CMB_HLS30                   2129
 #define IDC_CMB_HLS31                   2130
 #define IDC_CMB_HLS32                   2131
+
+#define IDC_BTN_START_TEST1             2201
+#define IDC_BTN_START_TEST2             2202
+#define IDC_BTN_START_TEST3             2203
+#define IDC_BTN_START_TEST4             2204
+#define IDC_BTN_START_TEST5             2205
+#define IDC_BTN_START_TEST6             2206
+#define IDC_BTN_START_TEST7             2207
+#define IDC_BTN_START_TEST8             2208
+#define IDC_BTN_START_TEST9             2209
+#define IDC_BTN_START_TEST10            2210
+#define IDC_BTN_START_TEST11            2211
+#define IDC_BTN_START_TEST12            2212
+#define IDC_BTN_START_TEST13            2213
+#define IDC_BTN_START_TEST14            2214
+#define IDC_BTN_START_TEST15            2215
+#define IDC_BTN_START_TEST16            2216
+#define IDC_BTN_START_TEST17            2217
+#define IDC_BTN_START_TEST18            2218
+#define IDC_BTN_START_TEST19            2219
+#define IDC_BTN_START_TEST20            2220
+#define IDC_BTN_START_TEST21            2221
+#define IDC_BTN_START_TEST22            2222
+#define IDC_BTN_START_TEST23            2223
+#define IDC_BTN_START_TEST24            2224
+#define IDC_BTN_START_TEST25            2225
+#define IDC_BTN_START_TEST26            2226
+#define IDC_BTN_START_TEST27            2227
+#define IDC_BTN_START_TEST28            2228
+#define IDC_BTN_START_TEST29            2229
+#define IDC_BTN_START_TEST30            2230
+#define IDC_BTN_START_TEST31            2231
+#define IDC_BTN_START_TEST32            2232
+	
+
+	
+
+
+
 #define IDC_STATIC                      -1
+
+
 
 // Next default values for new objects
 // 

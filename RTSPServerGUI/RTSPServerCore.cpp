@@ -638,7 +638,7 @@ std::mutex mtx;
 //////////////////////////////////////////////////////////
 // 拡張版
 ///////////////////////////////////////////////////////////
-int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[])
+int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[], bool _test_patern)
 {
     GstRTSPServer* server;
     GstRTSPMountPoints* mounts;
@@ -667,41 +667,80 @@ int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[])
         std::ostringstream sstr_channel;
 
         str_pipeline.str("");
-        str_pipeline
-            //<< "( udpsrc port=" << in_port            //2025/12/16
-            << "( udpsrc name=src0 port=" << _rctrl.in_port    //2025/12/16
-            << " timeout=5000000 " // 5秒無信号でタイムアウト (µs)
-            << " caps=\\\"application/x-rtp,media=video,encoding-name=H264,payload=96\\\" "
-            << "! rtph264depay "
-            << "! h264parse config-interval=1 "          // まず全体用のparser
-            << "! tee name=t "
-            // ---- RTSP 枝（★リーキーqueueで詰まり回避）
-            // 良く止まるので過去に無かった指令を外してみる 11/18
-            << "t. ! queue max-size-buffers=1 max-size-bytes=0 max-size-time=0 leaky=downstream "
-            << "! h264parse config-interval=1 "
-            << "! rtph264pay name=pay0 pt=96 "
-            // ---- HLS 枝
-            << "t. ! queue "
-            << "! h264parse config-interval=1 "
-            << "! mpegtsmux "
-            << "! hlssink "
-            << "location=" << hls_dir << "/seg%05d.ts "
-            << "playlist-location=" << hls_dir << "/index.m3u8 "
-            //<< "target-duration=2 max-files=5 "
-            << "target-duration=2 "
-            << "playlist-length=20 "   // プレイリストには 20 セグメント載せる（= 約40秒分）
-            << "max-files=40 "         // TSファイルも 40 個まで保持
-            << ")";
+        if( _test_patern )
+        {
+            // テストパターン映像
+            //str_pipeline
+            //    << "( videotestsrc is-live=true pattern=ball "
+            //    << "! x264enc tune=zerolatency bitrate=512 speed-preset=superfast "
+            //    << "! rtph264pay name=pay0 pt=96 "
+            //    << ")";
 
-        //playlist - length
-        //プレイリストに載せるセグメント数。デフォルトは 5 です
-        //gstreamer.freedesktop.org
-        //→ ここを 10〜20 くらいに増やすと、「少し遅れて再生開始しても、まだそのセグメントが残っている」状態を作れます。
-        //max - files
-        //実際にディスクに残す.ts の数。playlist - length と同じか、それより少し多めに。
-        //target - duration = 2 はそのままでも構いませんが、
-        //配信の遅延を多少増やしても良いなら、target - duration = 3 か 4 にすると、
-        //「1 セグメントあたりのデータ量が増えて、バッファが安定しやすい」という面もあります。
+            str_pipeline
+                << "( videotestsrc is-live=true pattern=smpte "
+                << "! video/x-raw,width=1280,height=720,framerate=30/1 "
+                << "! videoconvert "
+                << "! timeoverlay "
+                << "! x264enc tune=zerolatency speed-preset=ultrafast bitrate=2000 key-int-max=30 "
+                << "! h264parse config-interval=1 "
+                << "! tee name=t "
+
+                // ---- RTSP 枝（詰まり回避リーキーqueue）
+                << "t. ! queue max-size-buffers=1 max-size-bytes=0 max-size-time=0 leaky=downstream "
+                << "! rtph264pay name=pay0 pt=96 "
+
+                // ---- HLS 枝
+                << "t. ! queue "
+                << "! mpegtsmux "
+                << "! hlssink "
+                << "location=" << hls_dir << "/seg%05d.ts "
+                << "playlist-location=" << hls_dir << "/index.m3u8 "
+                << "target-duration=2 "
+                << "playlist-length=20 "
+                << "max-files=40 "
+                << ")";
+
+            // テストパターンは HLS 配信しない
+            hls_on = false;
+        }
+		else
+        {
+            str_pipeline
+                //<< "( udpsrc port=" << in_port            //2025/12/16
+                << "( udpsrc name=src0 port=" << _rctrl.in_port    //2025/12/16
+                << " timeout=5000000 " // 5秒無信号でタイムアウト (µs)
+                << " caps=\\\"application/x-rtp,media=video,encoding-name=H264,payload=96\\\" "
+                << "! rtph264depay "
+                << "! h264parse config-interval=1 "          // まず全体用のparser
+                << "! tee name=t "
+                // ---- RTSP 枝（★リーキーqueueで詰まり回避）
+                // 良く止まるので過去に無かった指令を外してみる 11/18
+                << "t. ! queue max-size-buffers=1 max-size-bytes=0 max-size-time=0 leaky=downstream "
+                << "! h264parse config-interval=1 "
+                << "! rtph264pay name=pay0 pt=96 "
+                // ---- HLS 枝
+                << "t. ! queue "
+                << "! h264parse config-interval=1 "
+                << "! mpegtsmux "
+                << "! hlssink "
+                << "location=" << hls_dir << "/seg%05d.ts "
+                << "playlist-location=" << hls_dir << "/index.m3u8 "
+                //<< "target-duration=2 max-files=5 "
+                << "target-duration=2 "
+                << "playlist-length=20 "   // プレイリストには 20 セグメント載せる（= 約40秒分）
+                << "max-files=40 "         // TSファイルも 40 個まで保持
+                << ")";
+
+            //playlist - length
+            //プレイリストに載せるセグメント数。デフォルトは 5 です
+            //gstreamer.freedesktop.org
+            //→ ここを 10〜20 くらいに増やすと、「少し遅れて再生開始しても、まだそのセグメントが残っている」状態を作れます。
+            //max - files
+            //実際にディスクに残す.ts の数。playlist - length と同じか、それより少し多めに。
+            //target - duration = 2 はそのままでも構いませんが、
+            //配信の遅延を多少増やしても良いなら、target - duration = 3 か 4 にすると、
+            //「1 セグメントあたりのデータ量が増えて、バッファが安定しやすい」という面もあります。
+        }
 
 #ifdef _DEBUG            
         std::cerr << "str_pipeline : " << str_pipeline.str() << std::endl;
