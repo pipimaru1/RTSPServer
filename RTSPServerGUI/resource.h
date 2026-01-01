@@ -16,8 +16,10 @@
 #define IDD_MAIN                        129
 #define IDC_BTN_START_ALL               130
 #define IDI_ROBOT64                     131
+#define IDC_BTN_START_ALL2              131
 #define IDI_ROBOT32                     132
 #define IDI_ICON2                       133
+#define IDC_BTN_START_TEST_ALL          134
 #define IDC_COMBO1                      1007
 #define IDC_BTN_START1                  1101
 #define IDC_BTN_START2                  1102
@@ -378,7 +380,6 @@
 #define IDC_CMB_HLS30                   2129
 #define IDC_CMB_HLS31                   2130
 #define IDC_CMB_HLS32                   2131
-
 #define IDC_BTN_START_TEST1             2201
 #define IDC_BTN_START_TEST2             2202
 #define IDC_BTN_START_TEST3             2203
@@ -411,15 +412,7 @@
 #define IDC_BTN_START_TEST30            2230
 #define IDC_BTN_START_TEST31            2231
 #define IDC_BTN_START_TEST32            2232
-	
-
-	
-
-
-
 #define IDC_STATIC                      -1
-
-
 
 // Next default values for new objects
 // 

@@ -226,10 +226,24 @@ struct APP_SETTINGS
 		8602,8604,8606,8608,
 		8610,8612,8614,8616
     };
+	int _RUN_MODE[MAXCH] = { 0 }; // テストパターンモード
 
     UINT HTTP_PORT = 8080;                        // HTTPポート（HLS用）
     std::wstring HLS_STR = L"hls";
 };
+//////////////////////////////////////////
+//
+// テストパターンモード 遷移ルール
+// STOP -> [STARTボタン]-> START 通常出力
+// STOP -> [TESTボタン]->TEST パターン出力
+// TEST -> [STOPボタン]-> STOP 停止
+// TEST -> [STARTボタン]-> STOP ->START 通常出力
+// _RUN_MODE[n] = 0; // 停止
+// _RUN_MODE[n] = 1; // 通常出力
+// _RUN_MODE[n] = 2; // テストパターン出力
+//
+//////////////////////////////////////////
+
 /////////////////////////////////////////
 //
 // ヘルパー関数
@@ -244,14 +258,16 @@ void LoadSettings(HWND hDlg, UINT _IDC_EDIT_PORTIN, UINT _IDC_EDIT_PORTOUT, UINT
 void LoadSettings(HWND hDlg,APP_SETTINGS& _GAPP);
 
 //void SetRunningUi(HWND hDlg, bool running);
-void SetRunningUi(HWND hDlg, bool running,
+void SetRunningUiX(HWND hDlg, 
+    int running,
     UINT _IDC_BTN_START,
+    UINT _IDC_BTN_TEST,
     UINT _IDC_BTN_STOP,
     UINT _IDC_EDIT_PORTIN,
     UINT _IDC_EDIT_PORTOUT,
     UINT _IDC_EDIT_PORTNAME
 );
-void SetRunningUi(HWND hDlg, bool running,APP_SETTINGS& _GAPP);
+void SetRunningUiAll(HWND hDlg, bool running,APP_SETTINGS& _GAPP);
 
 void ForceWindowOnVisibleMonitor(HWND hWnd);
 

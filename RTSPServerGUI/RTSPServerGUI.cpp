@@ -262,7 +262,7 @@ void IDC_SET_CMBBOX_HLS(
 
 ////////////////////////////////////////////////////////////////////////////////
 // この関数はWinProcの記述を軽くするためのマクロ関数です
-bool IDC_BTN_START(
+bool IDC_BTN_START_SUB(
     HWND _hDlg,
     RtspServerController& _g_server,
     UINT _ch,
@@ -325,14 +325,65 @@ bool IDC_BTN_START(
         return true;
     }
 
-    SetRunningUi(_hDlg, true,
+    //SetRunningUi(_hDlg, true,
+    //    _IDC_BTN_START,
+    //    _IDC_BTN_STOP,
+    //    _IDC_EDIT_PORTIN,
+    //    _IDC_EDIT_PORTOUT,
+    //    _IDC_EDIT_PORTNAME
+    //);
+
+    return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// この関数はWinProcの記述を軽くするためのマクロ関数です
+void BTN_STOP_SUB(
+    HWND _hDlg,
+    RtspServerController& _g_server,
+    UINT _IDC_BTN_START,
+    UINT _IDC_BTN_START_TEST,
+    UINT _IDC_BTN_STOP,
+    UINT _IDC_EDIT_PORTIN,
+    UINT _IDC_EDIT_PORTOUT,
+    UINT _IDC_EDIT_PORTNAME,
+    UINT _IDC_CHK
+) {
+    _g_server.Stop();
+    SetRunningUiX(_hDlg,
+        0,
         _IDC_BTN_START,
+        _IDC_BTN_START_TEST,
         _IDC_BTN_STOP,
         _IDC_EDIT_PORTIN,
         _IDC_EDIT_PORTOUT,
         _IDC_EDIT_PORTNAME
     );
-    return true;
+
+    CheckDlgButton(_hDlg, _IDC_CHK, BST_UNCHECKED);
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// この関数はWinProcの記述を軽くするためのマクロ関数です
+void BTN_STOP(
+    HWND _hDlg,
+    APP_SETTINGS& _GAPP,
+    UINT _ch
+)
+{
+    _GAPP._RUN_MODE[_ch] = 0;
+    BTN_STOP_SUB(
+        _hDlg,
+        gGstSv[_ch],
+        _GAPP.IDC_BTN_START[_ch],
+        _GAPP.IDC_BTN_START_TEST[_ch],
+        _GAPP.IDC_BTN_STOP[_ch],
+        _GAPP.IDC_EDIT_PORTIN[_ch],
+        _GAPP.IDC_EDIT_PORTOUT[_ch],
+        _GAPP.IDC_EDIT_PORTNAME[_ch],
+        _GAPP.IDC_CHK[_ch]
+    );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -341,8 +392,19 @@ bool IDC_BTN_START(
     HWND _hDlg,
     APP_SETTINGS& _GAPP,
     UINT _ch,
-	bool _TESTMODE = FALSE
+	bool _TESTMODE = false
 ){
+	bool _ret = false;
+    
+	// すでに起動中なら一旦停止する
+    if (GAPP._RUN_MODE[_ch] != 0)
+        BTN_STOP(_hDlg, _GAPP, _ch);
+
+    if( _TESTMODE )
+		GAPP._RUN_MODE[_ch] = 2;
+    else
+        GAPP._RUN_MODE[_ch] = 1;
+
 //	gGstSv[_ch].rCtrl.ch = _ch; // チャンネル番号をセット
 
 //URLコンボボックス更新
@@ -362,7 +424,7 @@ bool IDC_BTN_START(
 		//GAPP.HLS_STR
 	);
 
-    return IDC_BTN_START(
+    _ret= IDC_BTN_START_SUB(
         _hDlg,
 		gGstSv[_ch],
         _ch,
@@ -375,61 +437,21 @@ bool IDC_BTN_START(
 		_GAPP.IDC_CHK[_ch],
         _TESTMODE
     );
-}
 
-///////////////////////////////////////////////////////////////////////////////
-// この関数はWinProcの記述を軽くするためのマクロ関数です
-void BTN_STOP(
-    HWND _hDlg,
-    RtspServerController& _g_server,
-    UINT _IDC_BTN_START,
-    UINT _IDC_BTN_STOP,
-    UINT _IDC_EDIT_PORTIN,
-    UINT _IDC_EDIT_PORTOUT,
-    UINT _IDC_EDIT_PORTNAME,
-    UINT _IDC_CHK
-){
-    _g_server.Stop();
-    SetRunningUi(_hDlg, false,
-        _IDC_BTN_START,
-        _IDC_BTN_STOP,
-        _IDC_EDIT_PORTIN,
-        _IDC_EDIT_PORTOUT,
-        _IDC_EDIT_PORTNAME
-        );
-
-    CheckDlgButton(_hDlg, _IDC_CHK, BST_UNCHECKED);
-
-    
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// この関数はWinProcの記述を軽くするためのマクロ関数です
-void BTN_STOP(
-    HWND _hDlg,
-	APP_SETTINGS& _GAPP,
-	UINT _ch
-    ){
-    BTN_STOP(
-        _hDlg,
-        gGstSv[_ch],
+    SetRunningUiX(_hDlg, 
+        //true,
+		_GAPP._RUN_MODE[_ch],
         _GAPP.IDC_BTN_START[_ch],
+		_GAPP.IDC_BTN_START_TEST[_ch],
         _GAPP.IDC_BTN_STOP[_ch],
         _GAPP.IDC_EDIT_PORTIN[_ch],
         _GAPP.IDC_EDIT_PORTOUT[_ch],
-        _GAPP.IDC_EDIT_PORTNAME[_ch],
-        _GAPP.IDC_CHK[_ch]
-	);
-
-	//Onair表示を灰色に戻す パイプラインから通知が来ないので手動で再描画をコール
-	//g_onair[_ch] = false;
- //   for (int ch = 0; ch < MAXCH; ++ch) {
- //       //g_onair[ch] = false;
- //       HWND hCtl = GetDlgItem(_hDlg, IDC_ONAIR_1 + ch);
- //       InvalidateRect(hCtl, nullptr, TRUE);
- //   }
- //   UpdateWindow(_hDlg); // まとめて更新
+        _GAPP.IDC_EDIT_PORTNAME[_ch]
+    );
+	return _ret;
 }
+
+
 
 inline std::wstring string2wstring(const std::string& s)
 {
@@ -521,7 +543,7 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
             //アイコンの設定 ここまで
 
             LoadSettings(hDlg, GAPP);
-            SetRunningUi(hDlg, false, GAPP);
+            SetRunningUiAll(hDlg, false, GAPP);
             // タイトルを設定（不要なら消してOK）
             //SetWindowTextW(hDlg, szTitle);
 
@@ -574,8 +596,6 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				_TP.AddHoverTooltipForCtrl(hDlg, GAPP.IDC_CMB_BCFRASE[i], L"RTSP URL", L"RTSP URLを選択すると、RSTDP受信用のURLがクリップボードにコピーされます");
 				_TP.AddHoverTooltipForCtrl(hDlg, GAPP.IDC_CMB_HLS[i], L"HLS URL", L"HLS URLを選択すると、HTTP受信用のURLがクリップボードにコピーされます");
             }
-		
-
 			//ダイアログボックスの位置を強制的に0,0にする
             if(0)
                 ForceWindowOnVisibleMonitor(hDlg);
@@ -793,22 +813,34 @@ INT_PTR CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
                 {
                     // 全チャンネル開始
                     for (UINT ch = 0; ch < GAPP.size; ++ch) {
-                        if (gGstSv.size() > 0) {
-                            if (!gGstSv[ch].IsRunning()) {
+//                        if (gGstSv.size() > 0) {
+//                            if (!gGstSv[ch].IsRunning()) {
                                 IDC_BTN_START(hDlg, GAPP, ch);
-                            }
-                        }
+//                            }
+//                        }
                     }
 				}break;
+                case IDC_BTN_START_TEST_ALL:
+                {
+                    // 全チャンネルテスト開始
+                    for (UINT ch = 0; ch < GAPP.size; ++ch) {
+//                        if (gGstSv.size() > 0) {
+//                            if (!gGstSv[ch].IsRunning()) {
+                                IDC_BTN_START(hDlg, GAPP, ch, true);
+//                            }
+//                        }
+					}
+				}break;
+
                 case IDC_BTN_STOP_ALL:
                 {
                     // 全チャンネル停止
                     for (UINT ch = 0; ch < GAPP.size; ++ch) {
-                        if (gGstSv.size() > 0) {
-                            if (gGstSv[ch].IsRunning()) {
+//                        if (gGstSv.size() > 0) {
+//                            if (gGstSv[ch].IsRunning()) {
                                 BTN_STOP(hDlg, GAPP, ch);
-                            }
-                        }
+//                            }
+//                        }
                     }
 				}break;
 

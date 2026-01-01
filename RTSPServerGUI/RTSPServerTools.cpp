@@ -286,9 +286,12 @@ void LoadSettings(
 }
 
 //コントロールの状態を一括変更
-void SetRunningUi(HWND hDlg, bool running,
+void SetRunningUiX(HWND hDlg, 
+    int running,
     UINT _IDC_BTN_START,
-	UINT _IDC_BTN_STOP,
+    UINT _IDC_BTN_TEST,
+    UINT _IDC_BTN_STOP,
+
     UINT _IDC_EDIT_PORTIN,
     UINT _IDC_EDIT_PORTOUT,
 	UINT _IDC_EDIT_PORTNAME
@@ -297,6 +300,38 @@ void SetRunningUi(HWND hDlg, bool running,
     // ステータスチェック（表示用：ユーザー操作させないなら Disable）
     //CheckDlgButton(hDlg, IDC_CHK01, running ? BST_CHECKED : BST_UNCHECKED);
 
+    if(running==1)//稼働中
+    {
+        EnableWindow(GetDlgItem(hDlg, _IDC_BTN_START), FALSE);
+        EnableWindow(GetDlgItem(hDlg, _IDC_BTN_TEST), FALSE);
+        EnableWindow(GetDlgItem(hDlg, _IDC_BTN_STOP), TRUE);
+
+        EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTIN), FALSE);
+        EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTOUT), FALSE);
+        EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTNAME), FALSE);
+
+    }
+    else if(running==2)//テストパターン出力中
+    {
+        EnableWindow(GetDlgItem(hDlg, _IDC_BTN_START), TRUE);
+        EnableWindow(GetDlgItem(hDlg, _IDC_BTN_TEST), FALSE);
+        EnableWindow(GetDlgItem(hDlg, _IDC_BTN_STOP), TRUE);
+        EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTIN), FALSE);
+        EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTOUT), FALSE);
+        EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTNAME), FALSE);
+	}
+
+    else//停止中
+    {
+        EnableWindow(GetDlgItem(hDlg, _IDC_BTN_START), TRUE);
+        EnableWindow(GetDlgItem(hDlg, _IDC_BTN_TEST), TRUE);
+        EnableWindow(GetDlgItem(hDlg, _IDC_BTN_STOP), FALSE);
+
+        EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTIN), TRUE);
+        EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTOUT), TRUE);
+        EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTNAME), TRUE);
+    }
+/*
     EnableWindow(GetDlgItem(hDlg, _IDC_BTN_START), running ? FALSE : TRUE);
     EnableWindow(GetDlgItem(hDlg, _IDC_BTN_STOP), running ? TRUE : FALSE);
 
@@ -304,10 +339,11 @@ void SetRunningUi(HWND hDlg, bool running,
     EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTIN), running ? FALSE : TRUE);
     EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTOUT), running ? FALSE : TRUE);
     EnableWindow(GetDlgItem(hDlg, _IDC_EDIT_PORTNAME), running ? FALSE : TRUE);
+*/
 }
 
 //コントロールの状態を一括変更
-void SetRunningUi(HWND hDlg, bool running,
+void SetRunningUiAll(HWND hDlg, bool running,
     APP_SETTINGS& _GAPP
 )
 {
