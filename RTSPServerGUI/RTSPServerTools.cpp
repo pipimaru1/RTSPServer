@@ -59,6 +59,15 @@ void RtspServerController::Stop()
     if (!running_.load())
         return;
 
+
+    // 例：全クライアントを閉じる
+#if 1
+    gst_rtsp_server_client_filter(rCtrl.ptServer,
+        [](GstRTSPServer*, GstRTSPClient* client, gpointer)->GstRTSPFilterResult {
+            gst_rtsp_client_close(client);
+            return GST_RTSP_FILTER_REMOVE;
+        },
+        nullptr);
     // loop_ が生成済みなら quit
     if (rCtrl.ptLoop != nullptr)
     {
@@ -69,6 +78,26 @@ void RtspServerController::Stop()
             g_main_context_wakeup(ctx);
         }
     }
+#else
+    g_main_context_invoke(rCtrl.ptCtx, [](gpointer data)->gboolean {
+        auto* rc = static_cast<RTSPCtrl*>(data);
+
+        // ★ 既存クライアントを閉じる（必要なら）
+        gst_rtsp_server_client_filter(rc->ptServer,
+            [](GstRTSPServer*, GstRTSPClient* client, gpointer)->GstRTSPFilterResult {
+                gst_rtsp_client_close(client);
+                return GST_RTSP_FILTER_REMOVE;
+            },
+            nullptr);
+
+        // ★ メインループを止める
+        if (rc->ptLoop)
+            g_main_loop_quit(rc->ptLoop);
+
+        return G_SOURCE_REMOVE;
+        }, &rCtrl);
+#endif
+
 	//rCtrl.g_rx_watch_id が0になるまで待つ
     while (rCtrl.g_rx_watch_id != 0)
     {
@@ -84,6 +113,7 @@ void RtspServerController::Stop()
 
     if (th_.joinable())
         th_.join();
+
 
     // OpenRTSPServer 側では unref していないのでここで unref
     if (rCtrl.ptLoop != nullptr)

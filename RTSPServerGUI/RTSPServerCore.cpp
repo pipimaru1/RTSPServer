@@ -777,7 +777,13 @@ int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[], bool _test_patern
         // 中継メインループのインスタンス作成
         // 
         //////////////////////////////////////////
-        _rctrl.ptLoop = g_main_loop_new(NULL, FALSE);
+
+#if 0   //こちらにするとパイプライン起動しない
+        _rctrl.ptCtx = g_main_context_new();
+#else
+        _rctrl.ptCtx = NULL;
+#endif
+        _rctrl.ptLoop = g_main_loop_new(_rctrl.ptCtx, FALSE);
 
         /* create a server instance */
         server = gst_rtsp_server_new();
@@ -806,6 +812,10 @@ int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[], bool _test_patern
         // ADD Factory
         gst_rtsp_mount_points_add_factory(mounts, sstr_channel.str().c_str(), factory);
         g_object_unref(mounts);
+
+        //_rCtrl.ptCtx = ctx;
+        //_rCtrl.ptLoop = loop;
+        _rctrl.ptServer = (GstRTSPServer*)gst_object_ref(server);
 
         // サーバ attach
         _rctrl.ServerID = gst_rtsp_server_attach(server, NULL);
@@ -838,10 +848,18 @@ int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[], bool _test_patern
 	} //mtx ロックここまで
 
     g_main_loop_run(_rctrl.ptLoop);
-        
+
     //サーバが止まるとここに来るはず
     // サーバ削除
-    g_source_remove(_rctrl.ServerID);
+//    g_source_remove(_rctrl.ServerID);
+    if (_rctrl.ServerID) { 
+        g_source_remove(_rctrl.ServerID);
+        _rctrl.ServerID = 0;
+    }
+    gst_object_unref(server);
+    g_main_loop_unref(_rctrl.ptLoop);
+    g_main_context_unref(_rctrl.ptCtx);
+
 
     // タイマ削除
     if (_rctrl.g_rx_watch_id != 0) {
