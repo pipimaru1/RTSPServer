@@ -703,8 +703,37 @@ int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[], bool _test_patern
             // テストパターンは HLS 配信しない
             hls_on = false;
         }
-		else
+		else 
         {
+            str_pipeline
+                // buffer-size=2097152 (2MB) を追加し、OSレベルでのUDPパケット取りこぼしを防ぐ
+                << "( udpsrc name=src0 port=" << _rctrl.in_port
+                << " buffer-size=2097152 timeout=5000000 "
+                << " caps=\"application/x-rtp,media=video,encoding-name=H264,payload=96\" "
+                << "! rtph264depay "
+                << "! h264parse config-interval=1 "
+                << "! tee name=t "
+
+                // ---- RTSP 枝（leakyを外し、キューサイズを拡大）
+                << "t. ! queue max-size-buffers=0 max-size-bytes=0 max-size-time=3000000000 "
+                << "! h264parse config-interval=1 "
+                << "! rtph264pay name=pay0 pt=96 mtu=1400 "
+
+                // ---- HLS 枝
+                << "t. ! queue max-size-buffers=0 max-size-bytes=0 max-size-time=3000000000 "
+                << "! h264parse config-interval=1 "
+                << "! mpegtsmux "
+                << "! hlssink "
+                // ... (以降は元のコードと同じ)
+                << "location=" << hls_dir << "/seg%05d.ts "
+                << "playlist-location=" << hls_dir << "/index.m3u8 "
+                //<< "target-duration=2 max-files=5 "
+                << "target-duration=2 "
+                << "playlist-length=20 "   // プレイリストには 20 セグメント載せる（= 約40秒分）
+                << "max-files=40 "         // TSファイルも 40 個まで保持
+                << ")";
+
+/*
             str_pipeline
                 //<< "( udpsrc port=" << in_port            //2025/12/16
                 << "( udpsrc name=src0 port=" << _rctrl.in_port    //2025/12/16
@@ -730,7 +759,7 @@ int OpenRTSPServerEx(RTSPCtrl& _rctrl, int argc, char* argv[], bool _test_patern
                 << "playlist-length=20 "   // プレイリストには 20 セグメント載せる（= 約40秒分）
                 << "max-files=40 "         // TSファイルも 40 個まで保持
                 << ")";
-
+*/
             //playlist - length
             //プレイリストに載せるセグメント数。デフォルトは 5 です
             //gstreamer.freedesktop.org
