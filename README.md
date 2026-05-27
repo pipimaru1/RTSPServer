@@ -1,12 +1,5 @@
 This is a RTSP Broadcast center.
-Please use easy!
 <img width="1046" height="462" alt="image" src="https://github.com/user-attachments/assets/08f23647-def8-4b81-a9b4-43326c2a4195" />
-
-This aplication need Gstreamer.
-https://gstreamer.freedesktop.org/
-You must install runtime.
-Maybe need to install SDK too.
-
 # RTSPServerGUI 説明書
 
 ## 概要
@@ -100,16 +93,6 @@ Visual Studio で `RTSPServer.sln` を開きます。
 
 設定ファイルは、`RTSPServerGUI.exe` と同じフォルダに配置します。
 
-> 注意: ソースコード上の実装では、設定ファイル名は `default.ini` ではなく `settings.ini` です。  
-> `RTSPServerTools.cpp` の `GetIniPath()` で、実行ファイルと同じフォルダの `settings.ini` を読み書きしています。  
-> ファイル名を `default.ini` に統一したい場合は、`GetIniPath()` の戻り値を `default.ini` に変更してください。
-
-現在の実装で使用されるファイル名:
-
-```text
-settings.ini
-```
-
 `settings.ini` が存在しない場合は、アプリケーション内のデフォルト値で起動します。アプリケーション終了時に設定が保存されます。
 
 ### 4. アプリケーションを起動する
@@ -161,20 +144,6 @@ settings.ini
 
 ```text
 settings.ini
-```
-
-ユーザー向けの配布名を `default.ini` にしたい場合は、ソースコード側も変更してください。
-
-変更箇所:
-
-```cpp
-return (exe.parent_path() / L"settings.ini").wstring();
-```
-
-変更例:
-
-```cpp
-return (exe.parent_path() / L"default.ini").wstring();
 ```
 
 ### 配置場所
@@ -274,6 +243,8 @@ C:\hls\default-8554\index.m3u8
 > HLS URL で視聴する場合は、別途 HTTP サーバーを用意し、`C:\hls` 配下を公開してください。
 
 ## 画面構成
+
+<img width="1046" height="462" alt="image" src="https://github.com/user-attachments/assets/08f23647-def8-4b81-a9b4-43326c2a4195" />
 
 メイン画面には、CH01 から CH32 までの行があります。
 
