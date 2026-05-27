@@ -4,7 +4,9 @@ This is a RTSP Broadcast center.
 
 ## 概要
 
-`RTSPServerGUI` は、GStreamer を使用して RTP/UDP で送られてきた H.264 映像を受信し、チャンネルごとに RTSP 配信する Windows GUI アプリケーションです。HLSでHTTP配信することもできます。
+`RTSPServerGUI` は、GStreamer を使用して RTP/UDP で送られてきた H.264 映像を受信し、チャンネルごとに RTSP 配信する Windows GUI アプリケーションです。HLSでHTTP配信することもできます。簡素なストリーミングサーバーです。
+
+<img width="800" height="408" alt="image" src="https://github.com/user-attachments/assets/3a2df78e-4d79-43b0-9408-e861dec86200" />
 
 最大 32 チャンネルを同時に扱うことを想定しており、各チャンネルに対して次の設定を持ちます。
 
