@@ -249,7 +249,7 @@ C:\hls\default-8554\index.m3u8
 
 ## 画面構成
 
-<img width="1046" height="462" alt="image" src="https://github.com/user-attachments/assets/08f23647-def8-4b81-a9b4-43326c2a4195" />
+<img width="1269" height="360" alt="image" src="https://github.com/user-attachments/assets/d07e1c9d-3cb6-4bac-996f-293a2afd2852" />
 
 メイン画面には、CH01 から CH32 までの行があります。
 
@@ -335,6 +335,8 @@ CH01 から CH32 まで、全チャンネルの停止処理を順番に実行し
 
 ### RTSP URL をコピーする
 
+<img width="202" height="159" alt="image" src="https://github.com/user-attachments/assets/bbd5c601-5829-4842-8072-97d02f2a4fec" />
+
 `RTSP URL` のコンボボックスには、次の URL が表示されます。
 
 - `127.0.0.1` を使用したローカル確認用 URL
@@ -342,7 +344,10 @@ CH01 から CH32 まで、全チャンネルの停止処理を順番に実行し
 
 コンボボックスから URL を選択すると、その URL がクリップボードにコピーされます。
 
+
 ### HLS URL をコピーする
+
+<img width="197" height="168" alt="image" src="https://github.com/user-attachments/assets/330f7791-eafd-4c37-866a-8047e41d13ac" />
 
 `HTTP URL` のコンボボックスには、HLS 用 URL が表示されます。
 
