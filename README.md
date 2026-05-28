@@ -337,7 +337,7 @@ CH01 から CH32 まで、全チャンネルの停止処理を順番に実行し
 
 <img width="202" height="159" alt="image" src="https://github.com/user-attachments/assets/bbd5c601-5829-4842-8072-97d02f2a4fec" />
 
-`RTSP URL` のコンボボックスには、次の URL が表示されます。
+`RTSP URL` のコンボボックスには、次の 複数のURL が表示されます。複数表示されますので適切なアドレスを選んでください。
 
 - `127.0.0.1` を使用したローカル確認用 URL
 - 実行 PC のローカル IP アドレスを使用した外部アクセス用 URL
@@ -352,13 +352,11 @@ CH01 から CH32 まで、全チャンネルの停止処理を順番に実行し
 
 <img width="197" height="168" alt="image" src="https://github.com/user-attachments/assets/330f7791-eafd-4c37-866a-8047e41d13ac" />
 
-`HTTP URL` のコンボボックスには、HLS 用 URL が表示されます。
+`HTTP URL` のコンボボックスには、HLS 用 URL が表示されます。複数表示されますので適切なアドレスを選んでください。
 
 コンボボックスから URL を選択すると、その URL がクリップボードにコピーされます。
 
-HLS を使用する場合は、HTTPサーバーは別途用意してください。
-
-`C:\hls` を HTTP で公開する別プロセスが必要です。
+HLS を使用する場合は、HTTPサーバーは別途用意してください。`C:\hls` を HTTP で公開する設定を行ってください。
 
 ## 受信状態の表示
 
