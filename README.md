@@ -30,7 +30,7 @@ rtsp://<RTSPServerGUI実行PCのIPアドレス>:8554/default
 ```
 ### 用途
 開発の目的は、下図のように重いAI処理を分散させ、表示は簡素なミニPCで行うことを想定しています。
-<img width="1566" height="754" alt="image" src="https://github.com/user-attachments/assets/6dc7f3b6-7e38-4a5b-b8f9-ae344ed19303" />
+<img width="1610" height="777" alt="image" src="https://github.com/user-attachments/assets/e5c80737-6e27-4a1f-9621-60645ae811ad" />
 
 ## 動作環境
 
