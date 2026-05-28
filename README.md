@@ -315,6 +315,8 @@ rtsp://<RTSPServerGUI実行PCのIPアドレス>:8554/default
 
 配信経路や RTSP URL の確認、視聴側の接続確認に使用できます。
 
+<img width="1279" height="753" alt="image" src="https://github.com/user-attachments/assets/585d92eb-4af8-4472-9d69-3e62780bf667" />
+
 ### 全チャンネルを開始する
 
 画面上部の `ALL` 行にある `START` を押します。
