@@ -1,5 +1,5 @@
 This is a RTSP Broadcast center.
-<img width="1046" height="462" alt="image" src="https://github.com/user-attachments/assets/08f23647-def8-4b81-a9b4-43326c2a4195" />
+<img width="1269" height="360" alt="image" src="https://github.com/user-attachments/assets/e99885f5-50e8-48fb-9323-b460d2f939c4" />
 # RTSPServerGUI 説明書
 
 ## 概要
