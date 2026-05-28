@@ -28,6 +28,9 @@ ffmpeg -re -f lavfi -i testsrc2=size=1280x720:rate=30 \
 ```text
 rtsp://<RTSPServerGUI実行PCのIPアドレス>:8554/default
 ```
+### 用途
+開発の目的は、下図のように重いAI処理を分散させ、表示は簡素なミニPCで行うことを想定しています。
+<img width="1566" height="754" alt="image" src="https://github.com/user-attachments/assets/6dc7f3b6-7e38-4a5b-b8f9-ae344ed19303" />
 
 ## 動作環境
 
